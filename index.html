@@ -4,56 +4,236 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>100 Games</title>
+  <meta name="description" content="ゲーム製作修行：ブラウザで遊べるミニゲームを100本作るプロジェクト">
+  <meta name="theme-color" content="#fff7ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16141a" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="./shared/game.css">
   <style>
-    body { align-items: stretch; max-width: 960px; margin: 0 auto; }
-    .hero h1 { font-size: 2rem; margin: 8px 0 4px; }
-    .hero p { color: var(--muted); margin: 0; }
-    .progress {
-      height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 12px;
+    body { align-items: stretch; max-width: 1040px; margin: 0 auto; padding: var(--space-5) var(--space-4) var(--space-6); gap: var(--space-6); }
+
+    /* ---- ヒーロー ---- */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: var(--space-4) var(--space-5);
+      padding: var(--space-5);
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
     }
-    .progress > div { height: 100%; background: var(--accent); }
+    .hero h1 { font-size: clamp(2.25rem, 6vw, 3.25rem); margin: 0; letter-spacing: 0.01em; }
+    .hero h1 span { color: var(--accent-ink); }
+    .hero .lead { color: var(--muted); margin: var(--space-1) 0 0; }
+    .stat { text-align: right; font-family: var(--font-display); line-height: 1; }
+    .stat strong { font-size: 2.75rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent-ink); }
+    .stat small { display: block; margin-top: var(--space-1); font: 500 0.85rem var(--font-body); color: var(--muted); }
+    .progress {
+      grid-column: 1 / -1;
+      height: 12px;
+      background: var(--bg-deep);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress > div {
+      height: 100%;
+      width: 0;
+      min-width: 12px;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: inherit;
+      transition: width 600ms var(--ease-out);
+    }
+    @media (max-width: 560px) {
+      .hero { grid-template-columns: 1fr; padding: var(--space-4); }
+      .stat { text-align: left; }
+    }
+
+    /* ---- セクション見出し ---- */
+    section > header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+    section h2 { font-size: 1.35rem; margin: 0; }
+
+    /* ---- タグフィルター ---- */
+    .filters { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+    .chip {
+      min-height: 36px;
+      padding: 0 var(--space-3);
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font: 500 0.875rem var(--font-body);
+      cursor: pointer;
+      transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+    }
+    .chip:hover { border-color: var(--muted); color: var(--fg); }
+    .chip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+
+    /* ---- ゲームカード ---- */
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
       padding: 0;
-      margin: 8px 0 0;
+      margin: 0;
       list-style: none;
     }
     .card {
-      display: block;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
       height: 100%;
-      padding: 14px;
+      padding: var(--space-4);
       background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       color: inherit;
       text-decoration: none;
+      transition: transform var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
     }
-    a.card:hover { border-color: var(--accent); }
-    .card .no { color: var(--accent); font-weight: bold; font-variant-numeric: tabular-nums; }
-    .card h2 { font-size: 1.05rem; margin: 4px 0 6px; }
-    .card p { color: var(--muted); font-size: 0.85rem; margin: 0 0 8px; }
-    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
-    .tag { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: var(--bg); color: var(--muted); }
-    .card.empty { opacity: 0.45; border-style: dashed; }
+    .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--accent); }
+    .card:active { transform: translateY(0) scale(0.99); }
+    .card:focus-visible { border-radius: var(--radius); }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+    .no {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent-ink);
+      background: var(--accent-soft);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.875rem;
+    }
+    .best { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .best svg { width: 14px; height: 14px; color: var(--gold); }
+    .card h3 { font-size: 1.15rem; margin: var(--space-1) 0 0; }
+    .card p { color: var(--muted); font-size: 0.9rem; margin: 0; flex: 1; }
+    .card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: var(--space-2); }
+    .tags { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+    .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: var(--bg-deep); color: var(--muted); }
+    .play {
+      flex: none;
+      display: grid; place-items: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--button);
+      color: var(--on-accent);
+      transition: transform var(--dur) var(--ease-out);
+    }
+    .play svg { width: 16px; height: 16px; margin-left: 2px; }
+    .card:hover .play { transform: scale(1.08); }
+
+    .empty-state, .error-state {
+      padding: var(--space-5);
+      text-align: center;
+      color: var(--muted);
+      background: var(--bg-deep);
+      border-radius: var(--radius);
+    }
+    .error-state p { margin: 0 0 var(--space-3); }
+
+    /* 読み込み中のスケルトン（レイアウトのガタつき防止） */
+    .skeleton { height: 168px; border-radius: var(--radius); background: var(--bg-deep); animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 50% { opacity: 0.55; } }
+
+    /* ---- 100マスのロードマップ ---- */
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: var(--space-1);
+      padding: var(--space-3);
+      margin: 0;
+      list-style: none;
+      background: var(--panel);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .cell {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      min-height: 28px;
+      border-radius: var(--radius-sm);
+      font: 500 clamp(0.6rem, 1.6vw, 0.8rem) var(--font-display);
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+      border: 1.5px dashed var(--border);
+      text-decoration: none;
+    }
+    @media (min-width: 720px) { .roadmap { grid-template-columns: repeat(20, 1fr); } }
+    a.cell {
+      border: none;
+      background: var(--button);
+      color: var(--on-accent);
+      font-weight: 700;
+      transition: transform var(--dur-fast) var(--ease-out);
+    }
+    a.cell:hover { transform: scale(1.1); }
+    .legend { display: flex; gap: var(--space-4); font-size: 0.8rem; color: var(--muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+    .legend .done { background: var(--button); }
+    .legend .todo { border: 1.5px dashed var(--muted); }
+
+    footer { color: var(--muted); font-size: 0.85rem; text-align: center; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card:hover, a.cell:hover, .card:hover .play { transform: none; }
+      .skeleton { animation: none; }
+      .progress > div { transition: none; }
+    }
   </style>
 </head>
 <body>
   <header class="hero">
-    <h1>100 Games</h1>
-    <p>ゲーム製作修行：ブラウザで遊べるミニゲームを100本作る</p>
-    <p id="count"></p>
-    <div class="progress"><div id="bar" style="width:0"></div></div>
+    <div>
+      <h1>100 <span>Games</span></h1>
+      <p class="lead">ゲーム製作修行：ブラウザで遊べるミニゲームを100本作る</p>
+    </div>
+    <p class="stat" aria-live="polite"><strong id="count">–</strong> / 100<small>本 完成</small></p>
+    <div class="progress" role="progressbar" aria-label="完成本数" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+      <div id="bar"></div>
+    </div>
   </header>
+
   <main>
-    <ul class="grid" id="list"></ul>
+    <section aria-labelledby="games-heading">
+      <header>
+        <h2 id="games-heading">遊べるゲーム</h2>
+        <ul class="filters" id="filters" aria-label="タグで絞り込み"></ul>
+      </header>
+      <ul class="grid" id="list" aria-busy="true">
+        <li class="skeleton" aria-hidden="true"></li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="roadmap-heading" style="margin-top: var(--space-6)">
+      <header>
+        <h2 id="roadmap-heading">ロードマップ</h2>
+        <div class="legend" aria-hidden="true"><span><i class="done"></i>完成</span><span><i class="todo"></i>これから</span></div>
+      </header>
+      <ol class="roadmap" id="roadmap" aria-label="100本の進捗（完成したゲームへのリンク）"></ol>
+    </section>
   </main>
 
+  <footer>素の HTML / JavaScript だけで作っています</footer>
+
   <script type="module">
+    import { loadHighScore } from './shared/storage.js';
+
     const TOTAL = 100;
     const list = document.getElementById('list');
+    const filters = document.getElementById('filters');
+    const roadmap = document.getElementById('roadmap');
+
+    const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>';
+    const ICON_TROPHY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>';
 
     function el(tag, className, text) {
       const e = document.createElement(tag);
@@ -61,37 +241,120 @@
       if (text !== undefined) e.textContent = text;
       return e;
     }
+    const pad = (n) => String(n).padStart(3, '0');
 
-    try {
-      const res = await fetch('./games.json');
-      const games = await res.json();
-      const byNo = new Map(games.map((g) => [g.no, g]));
+    function card(g) {
+      const li = el('li');
+      li.dataset.tags = (g.tags || []).join('\n');
+      const a = el('a', 'card');
+      a.href = `./games/${g.id}/`;
 
-      document.getElementById('count').textContent = `${games.length} / ${TOTAL} 本 完成`;
-      document.getElementById('bar').style.width = `${(games.length / TOTAL) * 100}%`;
+      const top = el('div', 'card-top');
+      top.append(el('span', 'no', pad(g.no)));
+      const best = loadHighScore(g.id);
+      if (best > 0) {
+        const b = el('span', 'best');
+        b.innerHTML = ICON_TROPHY;
+        b.append(`ベスト ${best.toLocaleString('ja-JP')}`);
+        top.append(b);
+      }
 
+      const foot = el('div', 'card-foot');
+      const tags = el('div', 'tags');
+      (g.tags || []).forEach((t) => tags.append(el('span', 'tag', t)));
+      const play = el('span', 'play');
+      play.innerHTML = ICON_PLAY;
+      foot.append(tags, play);
+
+      a.append(top, el('h3', '', g.title), el('p', '', g.description), foot);
+      li.append(a);
+      return li;
+    }
+
+    function renderFilters(games) {
+      const all = [...new Set(games.flatMap((g) => g.tags || []))];
+      if (all.length < 2) return; // 絞り込む意味がないときは出さない
+      const buttons = [];
+      const select = (tag) => {
+        buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tag === tag)));
+        let shown = 0;
+        for (const li of list.children) {
+          if (!li.dataset.tags) continue;
+          const hit = tag === '' || li.dataset.tags.split('\n').includes(tag);
+          li.hidden = !hit;
+          if (hit) shown++;
+        }
+        document.getElementById('no-match')?.remove();
+        if (shown === 0) {
+          const e = el('li', 'empty-state', 'このタグのゲームはまだありません');
+          e.id = 'no-match';
+          list.append(e);
+        }
+      };
+      for (const tag of ['', ...all]) {
+        const li = el('li');
+        const b = el('button', 'chip', tag || 'すべて');
+        b.type = 'button';
+        b.dataset.tag = tag;
+        b.setAttribute('aria-pressed', String(tag === ''));
+        b.addEventListener('click', () => select(tag));
+        buttons.push(b);
+        li.append(b);
+        filters.append(li);
+      }
+    }
+
+    function renderRoadmap(byNo) {
       for (let no = 1; no <= TOTAL; no++) {
         const g = byNo.get(no);
         const li = el('li');
-        const num = String(no).padStart(3, '0');
         if (g) {
-          const a = el('a', 'card');
+          const a = el('a', 'cell', String(no));
           a.href = `./games/${g.id}/`;
-          a.append(el('span', 'no', num), el('h2', '', g.title), el('p', '', g.description));
-          const tags = el('div', 'tags');
-          (g.tags || []).forEach((t) => tags.append(el('span', 'tag', t)));
-          a.append(tags);
+          a.title = `${pad(no)} ${g.title}`;
+          a.setAttribute('aria-label', `${pad(no)} ${g.title}`);
           li.append(a);
         } else {
-          const d = el('div', 'card empty');
-          d.append(el('span', 'no', num), el('h2', '', '???'));
-          li.append(d);
+          li.setAttribute('aria-hidden', 'true'); // 未制作マスは読み上げない
+          li.append(el('span', 'cell', String(no)));
         }
-        list.append(li);
+        roadmap.append(li);
       }
-    } catch (e) {
-      list.append(el('li', '', 'games.json を読み込めませんでした。ローカルでは簡易サーバー経由で開いてください（README 参照）。'));
     }
+
+    async function init() {
+      list.setAttribute('aria-busy', 'true');
+      try {
+        const res = await fetch('./games.json');
+        if (!res.ok) throw new Error(res.statusText);
+        const games = (await res.json()).sort((a, b) => b.no - a.no); // 新しい順
+        const byNo = new Map(games.map((g) => [g.no, g]));
+
+        list.replaceChildren(...games.map(card));
+        if (games.length === 0) list.append(el('li', 'empty-state', '最初の1本を制作中…'));
+        renderFilters(games);
+        roadmap.replaceChildren();
+        renderRoadmap(byNo);
+
+        document.getElementById('count').textContent = games.length;
+        document.getElementById('progress').setAttribute('aria-valuenow', games.length);
+        requestAnimationFrame(() => {
+          document.getElementById('bar').style.width = `${(games.length / TOTAL) * 100}%`;
+        });
+      } catch (e) {
+        const li = el('li', 'error-state');
+        li.append(el('p', '', 'games.json を読み込めませんでした。ローカルでは簡易サーバー経由で開いてください（README 参照）。'));
+        const retry = el('button', 'btn btn-primary', 'もう一度読み込む');
+        retry.type = 'button';
+        retry.addEventListener('click', init);
+        li.append(retry);
+        list.replaceChildren(li);
+      } finally {
+        list.setAttribute('aria-busy', 'false');
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>

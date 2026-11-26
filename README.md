@@ -20,7 +20,8 @@
 │   ├── loop.js         # ゲームループ（dt 付き）
 │   ├── input.js        # キーボード・ポインター入力
 │   ├── storage.js      # ハイスコア保存（localStorage）
-│   └── game.css        # 共通スタイル（ダークモード対応）
+│   ├── ui.js           # 読み上げ・一時停止・canvas 用フォント
+│   └── game.css        # 共通スタイル・デザイントークン（ダークモード対応）
 └── .github/workflows/deploy.yml  # GitHub Pages へ自動公開
 ```
 
