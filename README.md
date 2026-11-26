@@ -11,7 +11,7 @@
 ├── games.json          # ゲームの一覧データ
 ├── games/
 │   ├── _template/      # 新しいゲームの雛形
-│   └── 001-click-target/
+│   └── 001-grass-mowing/
 │       ├── index.html
 │       ├── main.js
 │       └── README.md   # テーマ・学んだこと・反省
@@ -56,5 +56,4 @@ npx serve .
 
 | No. | タイトル | ジャンル | 日付 |
 |---|---|---|---|
-| 001 | [クリックターゲット](games/001-click-target/) | 反射 | 2026-11-26 |
-| 002 | [草刈りゲーム](games/002-grass-mowing/) | アクション | 2026-11-26 |
+| 001 | [草刈りゲーム](games/001-grass-mowing/) | アクション | 2026-11-26 |
