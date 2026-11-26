@@ -242,22 +242,20 @@
 
       .trace {
         position: absolute; left: 50%; bottom: 14%; z-index: 4;
-        width: 36px; height: 36px; margin-left: -18px;
-        pointer-events: none;
-        animation: traceFade 5s ease-out forwards;
+        width: 20px; height: 20px; margin-left: -10px;
+        pointer-events: none; opacity: 0.55;
+        animation: traceFade 0.7s ease-out forwards;
       }
-      .trace svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
+      .trace svg { width: 100%; height: 100%; }
       @keyframes traceFade {
-        0% { opacity: 1; transform: scale(1.3) rotate(-8deg); }
-        12% { opacity: 1; transform: scale(1) rotate(0deg); }
-        70% { opacity: 0.9; }
-        100% { opacity: 0; transform: scale(0.94); }
+        0% { opacity: 0.55; transform: scale(1) rotate(-8deg); }
+        100% { opacity: 0; transform: scale(0.85); }
       }
 
       .particle {
-        position: absolute; z-index: 6; width: 14px; height: 14px;
+        position: absolute; z-index: 6; width: 10px; height: 10px;
         pointer-events: none;
-        animation: pop-fly 0.55s ease-out forwards;
+        animation: pop-fly 0.35s ease-out forwards;
       }
       .particle svg { width: 100%; height: 100%; }
       @keyframes pop-fly {
@@ -280,28 +278,20 @@
         100% { opacity: 0; transform: translate(-50%, -42px) scale(1); }
       }
 
-      /* count-up: 集めた数を大きな数字で数え上げる */
-      #countPop {
-        position: absolute; left: 50%; top: 10px; z-index: 12;
-        transform: translateX(-50%);
-        display: flex; align-items: center; gap: 6px;
-        pointer-events: none; opacity: 0;
+      /* countPop は廃止：数は盤面の外のカウンターで更新する */
+      #countPop { display: none !important; }
+      /* 盤面の外の小さな称賛ライン（盤面には重ねない） */
+      #praiseLine {
+        min-height: 26px; margin: 0 2px 8px; text-align: center;
+        font-size: 14px; font-weight: 900; color: var(--accent-dark);
+        pointer-events: none;
       }
-      #countPop .cp-num {
-        font-size: 54px; font-weight: 900; line-height: 1; color: #fff;
-        text-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 0 14px rgba(255,183,3,0.55);
-        font-variant-numeric: tabular-nums;
-      }
-      #countPop .cp-mole { width: 44px; height: 44px; }
-      #countPop .cp-mole svg { width: 100%; height: 100%; display: block; }
-      #countPop.show { animation: countPopIn 0.85s ease-out forwards; }
-      @keyframes countPopIn {
-        0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
-        18% { opacity: 1; transform: translateX(-50%) scale(1.18); }
-        32% { transform: translateX(-50%) scale(1); }
-        78% { opacity: 1; }
-        100% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(1); }
-      }
+      #praiseLine:empty { min-height: 0; margin-bottom: 0; }
+      .attack-progress { font-variant-numeric: tabular-nums; }
+      .result-time { margin: 6px 0 4px; }
+      .result-time .rt-label { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+      .result-time .rt-num { font-size: 46px; font-weight: 900; line-height: 1.1; color: var(--accent-dark); font-variant-numeric: tabular-nums; }
+      .result-time .rt-best { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
 
       /* net cursor （虫取り網） */
       #net {
@@ -326,28 +316,8 @@
       }
       .fly-mole svg { width: 100%; height: 100%; display: block; }
 
-      /* milestone banner */
-      #banner {
-        position: absolute; inset: 0; z-index: 15;
-        display: flex; align-items: center; justify-content: center;
-        pointer-events: none; opacity: 0;
-      }
-      #banner.show { animation: bannerIn 1.5s ease forwards; }
-      #banner .banner-inner {
-        background: var(--panel); color: var(--ink);
-        border: 3px solid var(--gold); border-radius: 999px;
-        font-size: clamp(19px, 5.6vw, 28px); font-weight: 900;
-        padding: 10px 24px; box-shadow: 0 6px 0 var(--shadow);
-        white-space: nowrap; text-align: center;
-      }
-      #banner .banner-inner small { display: block; font-size: 0.62em; color: var(--accent-dark); }
-      @keyframes bannerIn {
-        0% { opacity: 0; transform: scale(0.7); }
-        14% { opacity: 1; transform: scale(1.06); }
-        22% { transform: scale(1); }
-        82% { opacity: 1; }
-        100% { opacity: 0; transform: scale(1) translateY(-10px); }
-      }
+      /* milestone banner は盤面に重ねないため廃止し、#praiseLine に置換 */
+      #banner { display: none !important; }
 
       /* start / result panels （盤面の外に置き、表示中は盤面を隠す） */
       .overlay {
@@ -459,21 +429,23 @@
       </div>
 
       <!-- HUD -->
-      <div class="hud" id="hudRow" aria-live="off">
+      <div class="hud has-time" id="hudRow" aria-live="off">
+        <div class="stat"><div class="label">あつめた</div><div class="value attack-progress"><span id="countHud">0</span><small> / 50ひき</small></div></div>
         <div class="stat"><div class="label">スコア</div><div class="value" id="scoreValue">0</div></div>
         <div class="stat"><div class="label">れんぞく</div><div class="value" id="streakValue">0</div></div>
-        <div class="stat"><div class="label">金のモグラ</div><div class="value"><span id="goldValue">0</span><small> ひき</small></div></div>
-        <div class="stat" id="timeStat" hidden><div class="label">のこり時間</div><div class="value"><span id="timeValue">60</span><small> 秒</small></div></div>
+        <div class="stat" id="timeStat"><div class="label" id="timeLabel">タイム</div><div class="value"><span id="timeValue">0:00</span></div></div>
       </div>
+      <div id="praiseLine" aria-live="polite"></div>
 
       <div class="progress-row">
         <div class="progress-meta">
-          <span id="goalLabel">つぎの ごほうびまで あと 10 ひき</span>
+          <span id="goalLabel">0 / 50ひき　あと 50 ひき</span>
           <span class="stars" id="starMeter" aria-label="もらった星"></span>
         </div>
         <div class="bar"><div id="goalBar"></div></div>
         <div class="bar timebar" id="timeBarWrap" hidden><div id="timeBar" style="width:100%"></div></div>
-        <div class="mode-note" id="modeNote">じかん なし モード：おわりは じぶんで きめられるよ</div>
+        <div class="mode-note" id="modeNote">50ひき タイムアタック：50ひき つかまえるまでの じかんを はかるよ</div>
+        <div style="display:none"><span id="goldValue">0</span></div>
       </div>
 
           <div class="overlay" id="startOverlay">
@@ -484,18 +456,23 @@
                 <div class="demo-pit"></div>
                 <svg class="demo-hand" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L21 13 H15.5 V22 H8.5 V13 H3 Z" fill="#ffb703" stroke="#c78f08" stroke-width="1.4" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
               </div>
-              <p>モグラが でたら タップ！<br />つかまえて あつめよう。</p>
+              <p>モグラが でたら タップ！<br />50ひき つかまえるまでの じかんを はかろう。</p>
               <div class="mode-btns">
-                <button class="btn" id="startFreeBtn" type="button">あそぶ<span class="btn-sub">じかん なし ・ おわりは じぶんできめる</span></button>
-                <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">60びょう チャレンジ<span class="btn-sub">おとな・おにいさん おねえさん むけ</span></button>
+                <button class="btn" id="startFreeBtn" type="button">50ひき タイムアタック<span class="btn-sub">スタートと同時に タイマーが うごくよ</span></button>
+                <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">じかん なしで あそぶ<span class="btn-sub">おわりは じぶんできめる ・ ゆっくり あそびたいとき</span></button>
               </div>
             </div>
           </div>
 
           <div class="overlay" id="resultOverlay" hidden>
             <div class="overlay-card">
-              <h2>おつかれさま！</h2>
+              <h2 id="resultTitle">おつかれさま！</h2>
               <p id="resultComment">よく あつめたね。</p>
+              <div class="result-time" id="rTimeWrap">
+                <div class="rt-label" id="rTimeLabel">クリアタイム（50ひき）</div>
+                <div class="rt-num" id="rTime">0:00.0</div>
+                <div class="rt-best" id="rBest">ベストタイム：—</div>
+              </div>
               <div class="result-big"><span class="rb-num" id="rCount">0</span> ひき つかまえた！</div>
               <div class="result-grid">
                 <div class="r"><div class="rl">スコア</div><div class="rv" id="rScore">0</div></div>
@@ -517,8 +494,9 @@
         <div class="board" id="board" role="group" aria-label="モグラの穴 3×3">
           <!-- holes injected by JS -->
           <div id="net" aria-hidden="true"></div>
-          <div id="countPop" aria-hidden="true"><span class="cp-mole" id="countPopMole"></span><span class="cp-num" id="countPopNum">1</span></div>
-          <div id="banner" aria-hidden="true"><div class="banner-inner" id="bannerText">よく みてたね！<small>10ひき つかまえた！</small></div></div>
+          <!-- 盤面の上にはメッセージを重ねない（称賛は盤面の外の #praiseLine に表示） -->
+          <div id="countPop" aria-hidden="true" style="display:none"><span class="cp-mole" id="countPopMole"></span><span class="cp-num" id="countPopNum">1</span></div>
+          <div id="banner" aria-hidden="true" style="display:none"><div class="banner-inner" id="bannerText"></div></div>
         </div>
       </div>
 
@@ -532,23 +510,28 @@
         <h2>あそびかた</h2>
         <ul>
           <li>モグラが顔を出したら、その穴をタップ。つかまえたモグラは喜んでジャンプして、上のカゴに集まります。パソコンでは数字キー <b>1〜9</b>（左上から順）でもつかまえられます。</li>
-          <li><b>じかん なし モード（ふだんはこちら）</b>：制限時間はありません。何匹集められるか、自分のペースで遊んで、「おしまいにする」で終われます。10匹ごとに星のごほうびと完了音が鳴ります。</li>
-          <li><b>60びょう チャレンジ</b>：大人の方向けの任意モードです。60秒で何匹集められるかに挑戦できます。</li>
+          <li><b>50ひき タイムアタック（標準モード）</b>：スタートと同時にタイマーがカウントアップします。50匹つかまえた時点で終了し、かかった時間（クリアタイム）が結果画面に大きく表示されます。進み具合は盤面の上の表示で「○ / 50ひき　あと ○ひき」と常時分かります。今回のあそびの中でのベストタイムも結果に表示されます。</li>
+          <li><b>じかん なし モード（任意）</b>：自分のペースで遊んで、「おしまいにする」で終われます。旧60秒モードは整理しました。</li>
           <li>つづけて つかまえると「れんぞく」が伸びて、スコア倍率とポップ音のピッチが上がります。逃がしても罰はなし。れんぞくが静かに切れるだけで、記録（さいだい れんぞく）は残ります。</li>
           <li>たまに出る<b>金のモグラ</b>は出ている時間が短いかわりに50点（倍率つき）。</li>
           <li>30秒あそぶと虫取り網が大きくなって、つかまえると隣の穴のモグラまで一緒に集められるようになります。</li>
           <li>しばらくタップがないと、出ているモグラが大きく揺れて光って「ここだよ」と教えてくれます。</li>
         </ul>
 
-        <h3>今回の改良：5歳児向け設計（調査レポートに基づく）</h3>
-        <p>「5歳児でも遊べるゲームを100つくる」の調査レポート（ゲームジャンル×教育的価値の整理）で、このゲーム（アクション・反射ジャンル）は「○（工夫すれば遊べる）」と位置づけられ、特に「制限時間の外し方」と「叩く表現の置換」が課題とされました。その指摘と設計指針21項目に沿って、次の改良を入れました。</p>
+        <h3>今回の変更：見やすさと操作のじゃまにならない表示</h3>
         <ul>
-          <li><b class="tag pink">制限時間を外す</b>（指針14）標準モードは制限時間なしにし、終わりは子ども自身が決められる形にしました。60秒モードは大人が選べる任意モードとして残しています。時間で「失敗」になる設計は避け、時間は「区切って次に進む」ためだけに使います。</li>
-          <li><b class="tag pink">「叩く」→「集める」</b>（指針20）ハンマーを虫取り網に替え、ヒット表現を「つかまえたモグラが笑顔でジャンプしてカゴに集まる」に置き換えました。モグラを倒す・潰す表現はありません。文言も「つかまえる／あつめる」に寄せています（タイトルだけは元のまま）。</li>
-          <li><b class="tag">文字に頼らない案内</b>（指針1・2・5）スタート画面は文章でなく、顔を出すモグラのアニメーションで遊び方を示します。穴とモグラは大きく、タップ対象は指1本で十分な大きさです。すべての操作に音＋動き＋絵の変化で即座に応答します（指針16）。</li>
-          <li><b class="tag">足場かけヒント</b>（指針9・14）約7秒タップがないと、出ているモグラが大きく揺れて光り、矢印が「ここだよ」と示します。Sesame Workshop の就学前向け設計ガイドにある「無操作時のヒント提示（ゲームで6〜8秒）」の目安に合わせたものです。間違えても逃がしても罰はなく、励まし→ヒントの順で支えます。</li>
-          <li><b class="tag gold">過程への称賛と数え上げ</b>（指針11）10匹ごとの完了音（DING）は残しつつ、表示は「よく みてたね！」など過程を褒める言葉にしました。つかまえるたびに集めた数が大きな数字で数え上がり、カゴにモグラが増えていくので、「数への関心」（文部科学省「幼児期の終わりまでに育ってほしい姿」⑧数量への関心・感覚）につながる見せ方にしています。</li>
-          <li><b class="tag">気持ちよさはそのまま</b>前回の「爽快感」調査で入れた工夫——たたいた瞬間と同フレームで返る即時フィードバック、穴に残る花の痕跡、れんぞくで上がるポップ音の音階、30秒での成長（大きな網）——は骨格ごと残しました。出てくる速さは全体に少しゆっくりにし、同時に顔を出すのは最大2匹までに抑えています。</li>
+          <li><b class="tag pink">盤面に重ねない</b>プレイ中、3×3の盤面の上にはメッセージや大きな数字のポップを一切出しません。称賛は盤面の上のエリアに小さく出し、数は盤面の外のカウンターで更新します。表示はすべてタップ判定を妨げません。</li>
+          <li><b class="tag pink">残る装飾をなくす</b>穴に長く残っていた花の痕跡は、ごく小さく1秒以内で消える控えめなものに変えました。星・花のごほうび散布も盤面上では行いません。盤面とモグラの見やすさを最優先しています。</li>
+          <li><b class="tag">「叩く」→「集める」は維持</b>ハンマーではなく虫取り網で集める表現、即時フィードバック（音・モグラの反応）、れんぞくで上がる音階、10匹ごとの完了音、30秒での網の成長、逃がしても罰なし、無操作時のヒントはそのまま残しています。</li>
+        </ul>
+
+        <h3>5歳児向け設計（調査レポートに基づく）</h3>
+        <p>「5歳児でも遊べるゲームを100つくる」の調査レポートで課題とされた「叩く表現の置換」などに沿った改良は維持しています。今回の標準モードは「50匹でゴール」という終わりが分かりやすい形にし、時間は制限（失敗）ではなく記録として扱います。</p>
+        <ul>
+          <li><b class="tag pink">「叩く」→「集める」</b>（指針20）ハンマーを虫取り網に替え、ヒット表現を「つかまえたモグラが笑顔でジャンプしてカゴに集まる」に置き換えました。</li>
+          <li><b class="tag">文字に頼らない案内</b>（指針1・2・5）スタート画面は顔を出すモグラのアニメーションで遊び方を示します。穴とモグラは大きく、タップ対象は指1本で十分な大きさです。</li>
+          <li><b class="tag">足場かけヒント</b>（指針9・14）約7秒タップがないと、出ているモグラが大きく揺れて光り、矢印が「ここだよ」と示します。</li>
+          <li><b class="tag gold">過程への称賛と数への関心</b>（指針11）10匹ごとの完了音（DING）は残し、称賛は盤面の外に小さく表示します。集めた数はカゴとカウンターで増えていくのが分かります。</li>
         </ul>
         <p>正直な留保も書いておきます。この遊びで伸びるのは「出てきたものを見落とさずにタップする」という、この遊びの中での反応までで、「注意力全般が上がる」といった広い効果は研究では示されていません（脳トレ型の遠い転移は証拠不十分とする総説があります）。だからこのページでも、育つ力を大げさには言わないことにしています。</p>
         <p class="src">出典：Sesame Workshop『Best Practices: Designing Touch Tablet Experiences for Preschoolers』(2012) <a href="https://regmedia.co.uk/2012/12/19/sesame_street_best_practices.pdf">regmedia.co.uk</a>／ American Academy of Pediatrics『Media and Young Minds』(2016) <a href="https://publications.aap.org/pediatrics/article/138/5/e20162591/60503/Media-and-Young-Minds?autologincheck=redirected">publications.aap.org</a>／ Hirsh-Pasek et al. (2015) 学習アプリの4本柱 <a href="https://www.psychologicalscience.org/news/releases/science-of-learning-can-help-parents-developers-grade-educational-apps.html">psychologicalscience.org</a>／ 文部科学省「幼児期の終わりまでに育ってほしい姿」 <a href="http://www.mext.go.jp:443/content/1422303_08.pdf">mext.go.jp</a></p>
@@ -561,7 +544,8 @@
     (function () {
       "use strict";
 
-      var GAME_MS = 60000;      // 60秒モード用
+      var TARGET = 50;          // タイムアタックの目標匹数
+      var GAME_MS = 60000;      // （旧60秒モード用・互換のため残置）
       var MILESTONE = 10;       // ごほうびの区切り
       var GOLD_CHANCE = 0.11;
       var HINT_AFTER_MS = 7000; // 無操作ヒント（Sesame目安 6〜8秒）
@@ -588,6 +572,11 @@
       var countPop = document.getElementById("countPop");
       var countPopNum = document.getElementById("countPopNum");
       var countPopMole = document.getElementById("countPopMole");
+      var praiseLine = document.getElementById("praiseLine");
+      var countHud = document.getElementById("countHud");
+      var timeLabel = document.getElementById("timeLabel");
+      var praiseTimer = null;
+      var bestTimeMs = null; // このセッション内でのベストタイム（保存はしない）
       var startOverlay = document.getElementById("startOverlay");
       var resultOverlay = document.getElementById("resultOverlay");
       var boardFrame = document.getElementById("boardFrame");
@@ -730,7 +719,7 @@
 
       // ----- game state -----
       var state = "idle"; // idle | playing | paused | done
-      var mode = "free";  // free | timed
+      var mode = "attack";  // attack（50匹タイムアタック） | free（時間なし）
       var elapsed = 0;
       var lastTs = null;
       var hitstopUntil = 0;
@@ -758,9 +747,16 @@
       }
       function difficulty() {
         var t = Math.min(elapsed / 90000, 1);
+        if (mode === "attack") {
+          return {
+            spawnEvery: 780 - 240 * t,   // タイムアタックは少しテンポよく
+            upTime: 1450 - 400 * t,
+            maxUp: elapsed < 12000 ? 1 : 2
+          };
+        }
         return {
-          spawnEvery: 980 - 340 * t,   // 980 -> 640ms（以前よりゆっくり）
-          upTime: 1550 - 480 * t,      // 1550 -> 1070ms
+          spawnEvery: 980 - 340 * t,
+          upTime: 1550 - 480 * t,
           maxUp: elapsed < 20000 ? 1 : 2
         };
       }
@@ -806,7 +802,7 @@
         t.innerHTML = gold ? STAR_SVG : FLOWER_SVG;
         h.el.appendChild(t);
         h.traceEl = t;
-        h.traceTimer = setTimeout(function () { t.remove(); if (h.traceEl === t) h.traceEl = null; }, 5100);
+        h.traceTimer = setTimeout(function () { t.remove(); if (h.traceEl === t) h.traceEl = null; }, 720);
       }
 
       function burst(h, gold) {
@@ -816,7 +812,7 @@
         var cx = hr.left - rect.left + hr.width / 2;
         var cy = hr.top - rect.top + hr.height * 0.35;
         var icons = gold ? [STAR_SVG, STAR_SVG, HEART_SVG] : [FLOWER_SVG, HEART_SVG, STAR_SVG];
-        for (var k = 0; k < 6; k++) {
+        for (var k = 0; k < 3; k++) {
           var p = document.createElement("span");
           p.className = "particle";
           p.innerHTML = icons[k % icons.length];
@@ -825,51 +821,36 @@
           p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
           p.style.setProperty("--dy", Math.sin(ang) * dist + "px");
           p.style.setProperty("--rot", (Math.random() * 160 - 80) + "deg");
-          p.style.left = (cx - 7) + "px";
-          p.style.top = (cy - 7) + "px";
+          p.style.left = (cx - 5) + "px";
+          p.style.top = (cy - 5) + "px";
           board.appendChild(p);
-          (function (el) { setTimeout(function () { el.remove(); }, 620); })(p);
+          (function (el) { setTimeout(function () { el.remove(); }, 380); })(p);
         }
       }
 
       function rewardBurst() {
-        if (reducedMotion) return;
-        var rect = board.getBoundingClientRect();
-        for (var k = 0; k < 10; k++) {
-          var p = document.createElement("span");
-          p.className = "particle";
-          p.style.width = "18px"; p.style.height = "18px";
-          p.innerHTML = k % 2 ? FLOWER_SVG : STAR_SVG;
-          var ang = (k / 10) * Math.PI * 2;
-          var dist = 60 + Math.random() * 50;
-          p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
-          p.style.setProperty("--dy", Math.sin(ang) * dist + "px");
-          p.style.setProperty("--rot", (Math.random() * 200 - 100) + "deg");
-          p.style.left = (rect.width / 2 - 9) + "px";
-          p.style.top = (rect.height / 2 - 9) + "px";
-          board.appendChild(p);
-          (function (el) { setTimeout(function () { el.remove(); }, 620); })(p);
-        }
+        // 盤面が見づらくなるため、盤面上のごほうび散布は廃止（音と盤面外の表示で伝える）
+        return;
       }
 
       function floatScore(h, text, gold) {
-        var rect = board.getBoundingClientRect();
-        var hr = h.el.getBoundingClientRect();
-        var s = document.createElement("span");
-        s.className = "score-float" + (gold ? " gold" : "");
-        s.textContent = text;
-        s.style.left = (hr.left - rect.left + hr.width / 2) + "px";
-        s.style.top = (hr.top - rect.top + 2) + "px";
-        board.appendChild(s);
-        setTimeout(function () { s.remove(); }, 720);
+        // 盤面の上に文字を重ねないため、浮き文字は廃止（スコアは盤面の外のHUDで更新）
+        return;
       }
 
+      function formatTime(ms) {
+        var totalSec = Math.floor(ms / 1000);
+        var m = Math.floor(totalSec / 60);
+        var s = totalSec % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+      }
+      function formatTimePrecise(ms) {
+        var tenth = Math.floor((ms % 1000) / 100);
+        return formatTime(ms) + "." + tenth;
+      }
       function showCountPop() {
-        countPopNum.textContent = count;
-        countPopMole.innerHTML = MOLE_SVG(collected[collected.length - 1] === "gold", true);
-        countPop.classList.remove("show");
-        void countPop.offsetWidth;
-        countPop.classList.add("show");
+        // 盤面中央への大きな数字ポップは廃止。数は盤面の外のカウンター（updateHUD）で更新する
+        return;
       }
 
       function flyToBasket(h, gold) {
@@ -886,12 +867,11 @@
         var dx = (br.left + br.width / 2) - (hr.left + hr.width / 2);
         var dy = (br.top + br.height / 2) - (hr.top + hr.height * 0.2 + 26);
         var anim = fly.animate([
-          { transform: "translate(0,0) scale(1)", opacity: 1 },
-          { transform: "translate(" + dx * 0.5 + "px," + (dy - 60) + "px) scale(0.75)", opacity: 1, offset: 0.55 },
+          { transform: "translate(0,0) scale(0.85)", opacity: 1 },
           { transform: "translate(" + dx + "px," + dy + "px) scale(0.3)", opacity: 0.4 }
-        ], { duration: 600, easing: "ease-in-out" });
+        ], { duration: 380, easing: "ease-in" });
         if (anim && anim.finished) { anim.finished.then(function () { fly.remove(); }).catch(function () { fly.remove(); }); }
-        setTimeout(function () { fly.remove(); }, 750);
+        setTimeout(function () { fly.remove(); }, 450);
       }
 
       function renderBasket() {
@@ -908,21 +888,17 @@
         basketIcons.innerHTML = html;
       }
 
+      function showPraise(text) {
+        if (!praiseLine) return;
+        praiseLine.textContent = text;
+        if (praiseTimer) clearTimeout(praiseTimer);
+        praiseTimer = setTimeout(function () { praiseLine.textContent = ""; }, 2200);
+      }
       function showBanner(main, sub) {
-        bannerText.innerHTML = "";
-        bannerText.appendChild(document.createTextNode(main));
-        var sm = document.createElement("small");
-        sm.textContent = sub;
-        bannerText.appendChild(sm);
-        bannerEl.classList.remove("show");
-        void bannerEl.offsetWidth;
-        bannerEl.classList.add("show");
+        showPraise(main + (sub ? "　" + sub : ""));
       }
       function showBannerSingle(text) {
-        bannerText.textContent = text;
-        bannerEl.classList.remove("show");
-        void bannerEl.offsetWidth;
-        bannerEl.classList.add("show");
+        showPraise(text);
       }
 
       function hitstop() {
@@ -977,37 +953,45 @@
         flyToBasket(h, gold);
         setTimeout(function () { hideMole(h, false); }, 300);
 
-        // 10匹ごとの区切り：完了音＋過程への称賛＋星と花のごほうび
-        if (count % MILESTONE === 0) {
+        // 10匹ごとの区切り：完了音＋盤面の外への小さな称賛（盤面には重ねない）
+        if (count % MILESTONE === 0 && !(mode === "attack" && count >= TARGET)) {
           playDing();
           var praise = PRAISE[(count / MILESTONE - 1) % PRAISE.length];
           showBanner(praise, count + "ひき つかまえた！");
-          rewardBurst();
           hitstop();
         }
         updateHUD();
+        updateTime();
+        // タイムアタック：50匹で終了（最後のモグラの反応を見せてから結果へ）
+        if (mode === "attack" && count >= TARGET && state === "playing") {
+          var finalElapsed = elapsed;
+          setTimeout(function () { if (state === "playing") { elapsed = finalElapsed; finish(); } }, 380);
+        }
       }
 
       function updateHUD() {
         scoreValue.textContent = score;
         countValue.textContent = count;
+        if (countHud) countHud.textContent = count;
         streakValue.textContent = streak;
         streakValue.classList.toggle("hot", streak >= 5);
         goldValue.textContent = goldCount;
-        var inCycle = count % MILESTONE;
-        goalBar.style.width = (inCycle / MILESTONE * 100) + "%";
-        goalLabel.textContent = "つぎの ごほうびまで あと " + (MILESTONE - inCycle) + " ひき";
+        if (mode === "attack") {
+          goalBar.style.width = (Math.min(count, TARGET) / TARGET * 100) + "%";
+          goalLabel.textContent = count + " / " + TARGET + "ひき　あと " + Math.max(0, TARGET - count) + " ひき";
+        } else {
+          var inCycle = count % MILESTONE;
+          goalBar.style.width = (inCycle / MILESTONE * 100) + "%";
+          goalLabel.textContent = "つぎの ごほうびまで あと " + (MILESTONE - inCycle) + " ひき（じかん なし）";
+        }
         var stars = Math.floor(count / MILESTONE);
         starMeter.textContent = stars ? "★".repeat(Math.min(stars, 12)) + (stars > 12 ? " ×" + stars : "") : "";
       }
 
       function updateTime() {
-        if (mode !== "timed") return;
-        var remain = Math.max(0, GAME_MS - elapsed);
-        var sec = Math.ceil(remain / 1000);
-        timeValue.textContent = sec;
-        timeValue.classList.toggle("low", sec <= 10 && state === "playing");
-        timeBar.style.width = (remain / GAME_MS * 100) + "%";
+        // タイムアタック・時間なし共通：経過時間をカウントアップ表示
+        timeValue.textContent = formatTime(elapsed);
+        timeValue.classList.remove("low");
       }
 
       function tick(ts) {
@@ -1040,7 +1024,6 @@
           if (elapsed - lastActivity >= HINT_AFTER_MS) applyHints();
 
           updateTime();
-          if (mode === "timed" && elapsed >= GAME_MS) { finish(); return; }
         }
         rafId = requestAnimationFrame(tick);
       }
@@ -1061,12 +1044,14 @@
           h.moleEl.classList.remove("up", "caught");
           if (h.traceEl) { h.traceEl.remove(); h.traceEl = null; }
         });
-        var timed = mode === "timed";
-        timeStat.hidden = !timed;
-        timeBarWrap.hidden = !timed;
-        hudRow.classList.toggle("has-time", timed);
-        modeNote.textContent = timed
-          ? "60びょう チャレンジ中"
+        var isAttack = mode === "attack";
+        timeStat.hidden = false;
+        timeBarWrap.hidden = true;
+        hudRow.classList.add("has-time");
+        if (timeLabel) timeLabel.textContent = isAttack ? "タイム" : "あそんだ じかん";
+        if (praiseLine) praiseLine.textContent = "";
+        modeNote.textContent = isAttack
+          ? "50ひき タイムアタック：50ひき つかまえるまでの じかんを はかるよ"
           : "じかん なし モード：おわりは じぶんで きめられるよ";
         state = "playing";
         holes.forEach(function (h) { h.el.disabled = false; });
@@ -1079,7 +1064,6 @@
         renderBasket();
         updateHUD();
         updateTime();
-        if (timed) timeBar.style.width = "100%";
         cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(tick);
       }
@@ -1090,15 +1074,26 @@
         cancelAnimationFrame(rafId);
         holes.forEach(function (h) { h.el.disabled = true; hideMole(h, false); });
         clearHints();
+        if (praiseLine) praiseLine.textContent = "";
+        var isAttackClear = mode === "attack" && count >= TARGET;
+        if (mode === "attack" && isAttackClear) {
+          if (bestTimeMs === null || elapsed < bestTimeMs) bestTimeMs = elapsed;
+        }
+        document.getElementById("resultTitle").textContent = isAttackClear ? "50ひき つかまえた！ゴール！" : "おつかれさま！";
+        document.getElementById("rTimeWrap").style.display = mode === "attack" ? "" : "none";
+        document.getElementById("rTimeLabel").textContent = isAttackClear ? "クリアタイム（50ひき）" : "かかった じかん";
+        document.getElementById("rTime").textContent = formatTimePrecise(elapsed);
+        document.getElementById("rBest").textContent = bestTimeMs !== null ? "ベストタイム（今回の あそびの 中で）： " + formatTimePrecise(bestTimeMs) : "ベストタイム：—";
         document.getElementById("rCount").textContent = count;
         document.getElementById("rScore").textContent = score;
         document.getElementById("rCombo").textContent = maxStreak;
         document.getElementById("rGold").textContent = goldCount;
         document.getElementById("rStars").innerHTML = Math.floor(count / MILESTONE) + "<small> こ</small>";
         document.getElementById("rNet").textContent = netBig ? "大きくなった" : "ふつう";
-        document.getElementById("rMode").textContent = mode === "timed" ? "60びょう" : "じかん なし";
+        document.getElementById("rMode").textContent = mode === "attack" ? "50ひき タイムアタック" : "じかん なし";
         var c = document.getElementById("resultComment");
-        if (count >= 30) c.textContent = "たくさん あつめたね。よく みて、よく がんばったね！";
+        if (isAttackClear) c.textContent = "50ひき つかまえたね。よく みて、よく がんばったね！タイムに ちょうせん できたね。";
+        else if (count >= 30) c.textContent = "たくさん あつめたね。よく みて、よく がんばったね！";
         else if (count >= 15) c.textContent = "よく あつめたね。さいごまで じょうずに つかまえたね。";
         else if (count >= 5) c.textContent = "よく みつけたね。つぎは もっと あつまるかも。";
         else if (count >= 1) c.textContent = "はじめの 一歩！つかまえられたね。";
@@ -1150,8 +1145,8 @@
       });
 
       // ----- controls -----
-      document.getElementById("startFreeBtn").addEventListener("click", function () { startGame("free"); });
-      document.getElementById("startTimedBtn").addEventListener("click", function () { startGame("timed"); });
+      document.getElementById("startFreeBtn").addEventListener("click", function () { startGame("attack"); });
+      document.getElementById("startTimedBtn").addEventListener("click", function () { startGame("free"); });
       document.getElementById("againBtn").addEventListener("click", function () { startGame(mode); });
       document.getElementById("modeBtn").addEventListener("click", backToStart);
       endBtn.addEventListener("click", function () {
@@ -1180,7 +1175,7 @@
           var idx = parseInt(e.key, 10) - 1;
           if (state === "playing") { swingNetAt(holes[idx].el); catchAt(idx, true); }
         } else if (e.key === " " && state === "idle") {
-          e.preventDefault(); startGame("free");
+          e.preventDefault(); startGame("attack");
         }
       });
       document.addEventListener("visibilitychange", function () {
