@@ -76,6 +76,8 @@
         border: 2px solid var(--panel-edge);
         border-radius: 18px;
         padding: 10px 14px 12px;
+        height: 104px;
+        overflow: hidden;
         box-shadow: 0 2px 0 var(--shadow);
         margin-bottom: 10px;
         display: flex;
@@ -92,7 +94,7 @@
       .basket { flex: 1; min-width: 0; }
       .basket .b-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
       .basket .b-label svg { width: 20px; height: 20px; flex: 0 0 auto; }
-      .basket-icons { display: flex; flex-wrap: wrap; gap: 2px; min-height: 26px; align-items: center; }
+      .basket-icons { display: flex; flex-wrap: wrap; gap: 2px; height: 50px; overflow: hidden; align-content: flex-start; align-items: flex-start; }
       .basket-icons .mini { width: 24px; height: 24px; }
       .basket-icons .mini svg { width: 100%; height: 100%; display: block; }
       .basket-icons .more { font-size: 13px; font-weight: 900; color: var(--ink-soft); }
@@ -104,6 +106,7 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 10px;
+        height: 64px;
       }
       .hud.has-time { grid-template-columns: repeat(4, 1fr); }
       .stat {
@@ -114,19 +117,21 @@
         text-align: center;
         box-shadow: 0 2px 0 var(--shadow);
       }
-      .stat .label { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.04em; }
-      .stat .value { font-size: 24px; font-weight: 900; line-height: 1.15; font-variant-numeric: tabular-nums; }
+      .stat .label { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.04em; white-space: nowrap; }
+      .stat .value { font-size: 24px; font-weight: 900; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
       .stat .value small { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
       #streakValue.hot { color: var(--accent-dark); }
       #timeValue.low { color: var(--danger); }
       .stat[hidden] { display: none; }
 
-      .progress-row { margin: 2px 2px 12px; }
+      .progress-row { margin: 2px 2px 12px; height: 64px; overflow: hidden; }
       .progress-meta {
         display: flex; justify-content: space-between; align-items: baseline;
         font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px;
+        height: 22px; white-space: nowrap; overflow: hidden;
       }
-      .progress-meta .stars { font-size: 15px; color: var(--gold-dark); letter-spacing: 0.1em; }
+      #goalLabel { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+      .progress-meta .stars { font-size: 15px; color: var(--gold-dark); letter-spacing: 0.1em; white-space: nowrap; flex: 0 0 auto; }
       .bar {
         height: 12px; border-radius: 999px; background: var(--bar-track);
         overflow: hidden; border: 2px solid var(--panel-edge);
@@ -139,7 +144,7 @@
       .timebar { margin-top: 6px; }
       .timebar > div { background: var(--accent); transition: width 0.1s linear; }
       .timebar[hidden] { display: none; }
-      .mode-note { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-align: right; margin-top: 4px; }
+      .mode-note { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-align: right; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
       /* ---------- Board ---------- */
       .board-frame[hidden] { display: none; }
@@ -282,11 +287,10 @@
       #countPop { display: none !important; }
       /* 盤面の外の小さな称賛ライン（盤面には重ねない） */
       #praiseLine {
-        min-height: 26px; margin: 0 2px 8px; text-align: center;
+        height: 26px; line-height: 26px; margin: 0 2px 8px; text-align: center;
         font-size: 14px; font-weight: 900; color: var(--accent-dark);
-        pointer-events: none;
+        pointer-events: none; white-space: nowrap; overflow: hidden;
       }
-      #praiseLine:empty { min-height: 0; margin-bottom: 0; }
       .attack-progress { font-variant-numeric: tabular-nums; }
       .result-time { margin: 6px 0 4px; }
       .result-time .rt-label { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
@@ -522,6 +526,7 @@
         <ul>
           <li><b class="tag pink">盤面に重ねない</b>プレイ中、3×3の盤面の上にはメッセージや大きな数字のポップを一切出しません。称賛は盤面の上のエリアに小さく出し、数は盤面の外のカウンターで更新します。表示はすべてタップ判定を妨げません。</li>
           <li><b class="tag pink">残る装飾をなくす</b>穴に長く残っていた花の痕跡は、ごく小さく1秒以内で消える控えめなものに変えました。星・花のごほうび散布も盤面上では行いません。盤面とモグラの見やすさを最優先しています。</li>
+          <li><b class="tag pink">盤面の位置を固定</b>画面上部の情報エリア（カゴ・スコア・称賛の一行・進捗バー）はすべて高さを固定しました。カゴのモグラが増えても、称賛が出たり消えたりしても、数字の桁が変わっても、盤面（3×3の穴）の位置は一切動きません。カゴに並ぶモグラは最新の11匹までで、残りは「…あと○ひき」と表示します。</li>
           <li><b class="tag">「叩く」→「集める」は維持</b>ハンマーではなく虫取り網で集める表現、即時フィードバック（音・モグラの反応）、れんぞくで上がる音階、10匹ごとの完了音、30秒での網の成長、逃がしても罰なし、無操作時のヒントはそのまま残しています。</li>
         </ul>
 
@@ -880,11 +885,12 @@
           return;
         }
         var html = "";
-        var show = collected.slice(-24);
+        var maxShow = 11; // カゴ表示は固定高さ（2行）に収まる数だけ並べ、残りは「あと○ひき」で示す
+        var show = collected.slice(-maxShow);
         show.forEach(function (t) {
           html += '<span class="mini">' + MINI_MOLE_SVG(t === "gold") + '</span>';
         });
-        if (collected.length > 24) html += '<span class="more">… あと ' + (collected.length - 24) + ' ひき</span>';
+        if (collected.length > maxShow) html += '<span class="more">… あと ' + (collected.length - maxShow) + ' ひき</span>';
         basketIcons.innerHTML = html;
       }
 
