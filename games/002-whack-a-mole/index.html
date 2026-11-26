@@ -29,6 +29,8 @@
         --gold: #f2b21b;
         --gold-dark: #c78f08;
         --star: #ffb703;
+        --pink: #f28bb4;
+        --pink-dark: #d96a97;
         --bar-track: #e3d7b8;
         --danger: #c1442e;
         --shadow: rgba(74, 47, 24, 0.25);
@@ -68,13 +70,42 @@
         padding: 16px 14px 40px;
       }
 
+      /* ---------- Collection (あつめたモグラ) ---------- */
+      .collection {
+        background: var(--panel);
+        border: 2px solid var(--panel-edge);
+        border-radius: 18px;
+        padding: 10px 14px 12px;
+        box-shadow: 0 2px 0 var(--shadow);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .big-count { text-align: center; flex: 0 0 auto; min-width: 86px; }
+      .big-count .bc-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+      .big-count .bc-num {
+        font-size: 52px; font-weight: 900; line-height: 1.05;
+        font-variant-numeric: tabular-nums; color: var(--accent-dark);
+      }
+      .big-count .bc-unit { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+      .basket { flex: 1; min-width: 0; }
+      .basket .b-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+      .basket .b-label svg { width: 20px; height: 20px; flex: 0 0 auto; }
+      .basket-icons { display: flex; flex-wrap: wrap; gap: 2px; min-height: 26px; align-items: center; }
+      .basket-icons .mini { width: 24px; height: 24px; }
+      .basket-icons .mini svg { width: 100%; height: 100%; display: block; }
+      .basket-icons .more { font-size: 13px; font-weight: 900; color: var(--ink-soft); }
+      .basket-icons .empty { font-size: 13px; color: var(--ink-soft); font-weight: 700; }
+
       /* ---------- HUD ---------- */
       .hud {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
         margin-bottom: 10px;
       }
+      .hud.has-time { grid-template-columns: repeat(4, 1fr); }
       .stat {
         background: var(--panel);
         border: 2px solid var(--panel-edge);
@@ -86,28 +117,32 @@
       .stat .label { font-size: 11px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.04em; }
       .stat .value { font-size: 24px; font-weight: 900; line-height: 1.15; font-variant-numeric: tabular-nums; }
       .stat .value small { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
-      #comboValue.hot { color: var(--accent-dark); }
+      #streakValue.hot { color: var(--accent-dark); }
       #timeValue.low { color: var(--danger); }
+      .stat[hidden] { display: none; }
 
       .progress-row { margin: 2px 2px 12px; }
       .progress-meta {
         display: flex; justify-content: space-between; align-items: baseline;
         font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 4px;
       }
-      .progress-meta .pct { font-size: 14px; color: var(--ink); }
+      .progress-meta .stars { font-size: 15px; color: var(--gold-dark); letter-spacing: 0.1em; }
       .bar {
         height: 12px; border-radius: 999px; background: var(--bar-track);
         overflow: hidden; border: 2px solid var(--panel-edge);
       }
       .bar > div {
         height: 100%; width: 0%;
-        background: repeating-linear-gradient(45deg, var(--grass) 0 10px, var(--grass-dark) 10px 20px);
+        background: repeating-linear-gradient(45deg, var(--pink) 0 10px, var(--pink-dark) 10px 20px);
         transition: width 0.25s ease;
       }
       .timebar { margin-top: 6px; }
       .timebar > div { background: var(--accent); transition: width 0.1s linear; }
+      .timebar[hidden] { display: none; }
+      .mode-note { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-align: right; margin-top: 4px; }
 
       /* ---------- Board ---------- */
+      .board-frame[hidden] { display: none; }
       .board-frame {
         position: relative;
         background: var(--grass-dark);
@@ -144,6 +179,7 @@
         border-radius: 50%;
         min-height: 0;
       }
+      .hole:disabled { opacity: 1; cursor: inherit; }
       .hole:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
       .hole .pit {
         position: absolute; left: 6%; right: 6%; bottom: 2%; height: 46%;
@@ -165,37 +201,63 @@
       }
       @media (hover: none) { .hole .key-hint { display: none; } }
 
+      /* idle hint: 出ているモグラが大きく揺れて光る */
+      .hole.hint .pit {
+        box-shadow: inset 0 8px 10px rgba(0,0,0,0.55), 0 0 0 4px var(--gold), 0 0 22px 8px rgba(255, 183, 3, 0.75);
+      }
+      .hole.hint .mole.up { animation: hintWiggle 0.55s ease-in-out infinite; }
+      @keyframes hintWiggle {
+        0%, 100% { transform: translateY(6%) rotate(0deg) scale(1); }
+        25% { transform: translateY(-2%) rotate(-6deg) scale(1.07); }
+        75% { transform: translateY(-2%) rotate(6deg) scale(1.07); }
+      }
+      .hole .hint-arrow {
+        position: absolute; left: 50%; top: -4px; margin-left: -11px; z-index: 6;
+        width: 22px; height: 22px; pointer-events: none; display: none;
+      }
+      .hole.hint .hint-arrow { display: block; animation: hintBounce 0.55s ease-in-out infinite; }
+      @keyframes hintBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(7px); }
+      }
+
       .mole-clip {
-        position: absolute; left: 10%; right: 10%; bottom: 12%; height: 88%;
+        position: absolute; left: 8%; right: 8%; bottom: 12%; height: 90%;
         overflow: hidden; z-index: 2; pointer-events: none;
       }
       .mole {
         position: absolute; left: 0; right: 0; bottom: 0; height: 100%;
         transform: translateY(105%);
-        transition: transform 0.13s cubic-bezier(0.34, 1.4, 0.64, 1);
+        transition: transform 0.16s cubic-bezier(0.34, 1.4, 0.64, 1);
       }
       .mole.up { transform: translateY(6%); }
-      .mole.hit { transform: translateY(6%) scaleY(0.72); transition: transform 0.07s ease-in; }
+      .mole.caught { animation: caughtJump 0.32s ease-out forwards; }
+      @keyframes caughtJump {
+        0% { transform: translateY(6%) scale(1); }
+        35% { transform: translateY(-16%) scale(1.08) rotate(-3deg); }
+        65% { transform: translateY(-10%) scale(1.05) rotate(3deg); }
+        100% { transform: translateY(30%) scale(0.9); opacity: 0.9; }
+      }
       .mole svg { width: 100%; height: 100%; display: block; }
 
       .trace {
-        position: absolute; left: 50%; bottom: 16%; z-index: 4;
-        width: 34px; height: 34px; margin-left: -17px;
+        position: absolute; left: 50%; bottom: 14%; z-index: 4;
+        width: 36px; height: 36px; margin-left: -18px;
         pointer-events: none;
-        animation: traceFade 4s ease-out forwards;
+        animation: traceFade 5s ease-out forwards;
       }
       .trace svg { width: 100%; height: 100%; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
       @keyframes traceFade {
-        0% { opacity: 1; transform: scale(1.25) rotate(-8deg); }
+        0% { opacity: 1; transform: scale(1.3) rotate(-8deg); }
         12% { opacity: 1; transform: scale(1) rotate(0deg); }
-        70% { opacity: 0.85; }
+        70% { opacity: 0.9; }
         100% { opacity: 0; transform: scale(0.94); }
       }
 
       .particle {
-        position: absolute; z-index: 6; width: 13px; height: 13px;
+        position: absolute; z-index: 6; width: 14px; height: 14px;
         pointer-events: none;
-        animation: pop-fly 0.5s ease-out forwards;
+        animation: pop-fly 0.55s ease-out forwards;
       }
       .particle svg { width: 100%; height: 100%; }
       @keyframes pop-fly {
@@ -205,35 +267,64 @@
 
       .score-float {
         position: absolute; z-index: 7; pointer-events: none;
-        font-weight: 900; font-size: 19px; color: #fff;
+        font-weight: 900; font-size: 17px; color: #fff;
         text-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 0 6px rgba(0,0,0,0.2);
         transform: translate(-50%, 0);
         animation: floatUp 0.7s ease-out forwards;
         white-space: nowrap;
       }
-      .score-float.gold { color: var(--gold); font-size: 23px; }
+      .score-float.gold { color: var(--gold); font-size: 21px; }
       @keyframes floatUp {
         0% { opacity: 0; transform: translate(-50%, 6px) scale(0.8); }
         18% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
         100% { opacity: 0; transform: translate(-50%, -42px) scale(1); }
       }
 
-      /* hammer cursor */
-      #hammer {
-        position: absolute; z-index: 20; width: 74px; height: 74px;
+      /* count-up: 集めた数を大きな数字で数え上げる */
+      #countPop {
+        position: absolute; left: 50%; top: 10px; z-index: 12;
+        transform: translateX(-50%);
+        display: flex; align-items: center; gap: 6px;
+        pointer-events: none; opacity: 0;
+      }
+      #countPop .cp-num {
+        font-size: 54px; font-weight: 900; line-height: 1; color: #fff;
+        text-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 0 14px rgba(255,183,3,0.55);
+        font-variant-numeric: tabular-nums;
+      }
+      #countPop .cp-mole { width: 44px; height: 44px; }
+      #countPop .cp-mole svg { width: 100%; height: 100%; display: block; }
+      #countPop.show { animation: countPopIn 0.85s ease-out forwards; }
+      @keyframes countPopIn {
+        0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+        18% { opacity: 1; transform: translateX(-50%) scale(1.18); }
+        32% { transform: translateX(-50%) scale(1); }
+        78% { opacity: 1; }
+        100% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(1); }
+      }
+
+      /* net cursor （虫取り網） */
+      #net {
+        position: absolute; z-index: 20; width: 76px; height: 76px;
         pointer-events: none; left: 0; top: 0;
-        transform-origin: 78% 82%;
+        transform-origin: 30% 25%;
         filter: drop-shadow(0 3px 3px rgba(0,0,0,0.3));
         opacity: 0; transition: opacity 0.15s;
       }
-      #hammer.big { width: 98px; height: 98px; }
-      #hammer.swing { animation: swing 0.16s ease-in; }
-      @keyframes swing {
+      #net.big { width: 102px; height: 102px; }
+      #net.swing { animation: scoop 0.18s ease-in; }
+      @keyframes scoop {
         0% { transform: rotate(0deg); }
-        45% { transform: rotate(-38deg); }
+        45% { transform: rotate(34deg) translateY(6px); }
         100% { transform: rotate(0deg); }
       }
       .board.hitstop .mole, .board.hitstop .trace { animation-play-state: paused; }
+
+      .fly-mole {
+        position: fixed; z-index: 60; width: 52px; height: 52px;
+        pointer-events: none;
+      }
+      .fly-mole svg { width: 100%; height: 100%; display: block; }
 
       /* milestone banner */
       #banner {
@@ -241,47 +332,69 @@
         display: flex; align-items: center; justify-content: center;
         pointer-events: none; opacity: 0;
       }
-      #banner.show { animation: bannerIn 1.15s ease forwards; }
+      #banner.show { animation: bannerIn 1.5s ease forwards; }
       #banner .banner-inner {
         background: var(--panel); color: var(--ink);
         border: 3px solid var(--gold); border-radius: 999px;
-        font-size: clamp(20px, 6vw, 30px); font-weight: 900;
-        padding: 10px 26px; box-shadow: 0 6px 0 var(--shadow);
-        white-space: nowrap;
+        font-size: clamp(19px, 5.6vw, 28px); font-weight: 900;
+        padding: 10px 24px; box-shadow: 0 6px 0 var(--shadow);
+        white-space: nowrap; text-align: center;
       }
+      #banner .banner-inner small { display: block; font-size: 0.62em; color: var(--accent-dark); }
       @keyframes bannerIn {
         0% { opacity: 0; transform: scale(0.7); }
         14% { opacity: 1; transform: scale(1.06); }
         22% { transform: scale(1); }
-        80% { opacity: 1; }
+        82% { opacity: 1; }
         100% { opacity: 0; transform: scale(1) translateY(-10px); }
       }
 
-      /* overlay (start / result / pause) */
+      /* start / result panels （盤面の外に置き、表示中は盤面を隠す） */
       .overlay {
-        position: absolute; inset: 0; z-index: 30;
-        background: rgba(30, 22, 10, 0.55);
-        display: flex; align-items: center; justify-content: center;
-        border-radius: 14px; padding: 16px;
+        margin-bottom: 12px;
       }
       .overlay[hidden] { display: none; }
       .overlay-card {
         background: var(--panel); border: 2px solid var(--panel-edge);
-        border-radius: 18px; padding: 20px 22px; text-align: center;
-        max-width: 340px; width: 100%; box-shadow: 0 8px 0 var(--shadow);
+        border-radius: 18px; padding: 18px 22px 20px; text-align: center;
+        max-width: 420px; margin: 0 auto; box-shadow: 0 8px 0 var(--shadow);
       }
-      .overlay-card h2 { margin: 0 0 6px; font-size: 24px; font-weight: 900; }
-      .overlay-card p { margin: 0 0 14px; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+      .overlay-card h2 { margin: 0 0 2px; font-size: 25px; font-weight: 900; }
+      .overlay-card p { margin: 0 0 12px; font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; font-weight: 700; }
+      .demo-stage { position: relative; height: 92px; margin: 2px auto 8px; width: 120px; }
+      .demo-stage .demo-pit {
+        position: absolute; left: 4px; right: 4px; bottom: 0; height: 40px;
+        background: radial-gradient(ellipse at 50% 38%, #1f1207 0%, var(--hole) 62%, var(--soil-dark) 100%);
+        border-radius: 50%;
+        box-shadow: inset 0 8px 10px rgba(0,0,0,0.55);
+      }
+      .demo-stage .demo-clip { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 78px; overflow: hidden; }
+      .demo-stage .demo-mole { position: absolute; left: 0; right: 0; bottom: 0; height: 78px; animation: demoPop 1.8s ease-in-out infinite; }
+      .demo-stage .demo-mole svg { width: 100%; height: 100%; display: block; }
+      @keyframes demoPop {
+        0%, 12% { transform: translateY(96%); }
+        32%, 68% { transform: translateY(4%); }
+        88%, 100% { transform: translateY(96%); }
+      }
+      .demo-stage .demo-hand {
+        position: absolute; right: -6px; top: 0; width: 30px; height: 30px; z-index: 3;
+        animation: hintBounce 0.9s ease-in-out infinite;
+      }
+      .mode-btns { display: flex; flex-direction: column; gap: 8px; }
+      .mode-btns .btn { width: 100%; }
+      .btn-sub { font-size: 12px; font-weight: 700; opacity: 0.85; display: block; }
       .result-grid {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
       }
       .result-grid .r { background: var(--bar-track); border-radius: 12px; padding: 8px 2px; }
       .result-grid .r .rl { font-size: 11px; font-weight: 700; color: var(--ink-soft); }
       .result-grid .r .rv { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
       .result-grid .r .rv small { font-size: 12px; color: var(--ink-soft); }
+      .result-big { font-size: 21px; font-weight: 900; margin-bottom: 10px; }
+      .result-big .rb-num { font-size: 40px; color: var(--accent-dark); font-variant-numeric: tabular-nums; }
 
       /* ---------- Controls ---------- */
-      .controls { display: flex; gap: 8px; margin-top: 12px; }
+      .controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
       .btn {
         flex: 1; appearance: none; border: none; cursor: pointer;
         font-family: inherit; font-weight: 900; font-size: 16px;
@@ -291,7 +404,7 @@
         transition: transform 0.05s, box-shadow 0.05s, opacity 0.15s;
       }
       .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--accent-dark); }
-      .btn.secondary { background: var(--panel); color: var(--ink); border: 2px solid var(--panel-edge); box-shadow: 0 4px 0 var(--shadow); flex: 0 0 auto; padding-left: 18px; padding-right: 18px; }
+      .btn.secondary { background: var(--panel); color: var(--ink); border: 2px solid var(--panel-edge); box-shadow: 0 4px 0 var(--shadow); flex: 0 0 auto; padding-left: 16px; padding-right: 16px; }
       .btn.secondary:active { box-shadow: 0 1px 0 var(--shadow); }
       .btn:disabled { opacity: 0.45; cursor: default; }
       .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
@@ -313,133 +426,193 @@
         vertical-align: 1px;
       }
       section.notes b.tag.gold { background: var(--gold-dark); }
+      section.notes b.tag.pink { background: var(--pink-dark); }
+      section.notes .src { font-size: 12.5px; color: var(--ink-soft); }
+      section.notes .src a { color: var(--accent-dark); }
       .foot { text-align: center; font-size: 12px; color: var(--ink-soft); margin-top: 18px; }
 
       @media (prefers-reduced-motion: reduce) {
-        .particle, .score-float { animation-duration: 0.01s; }
-        #hammer.swing { animation: none; }
+        .particle, .score-float, #countPop.show { animation-duration: 0.01s; }
+        #net.swing { animation: none; }
         .mole { transition-duration: 0.05s; }
+        .mole.caught { animation-duration: 0.05s; }
+        .hole.hint .mole.up, .hole .hint-arrow, .demo-stage .demo-mole, .demo-stage .demo-hand { animation: none; }
+        .demo-stage .demo-mole { transform: translateY(4%); }
       }
     </style>
   </head>
   <body>
     <div class="wrap">
+      <!-- あつめたモグラ（数え上げ表示） -->
+      <div class="collection" id="collectionPanel">
+        <div class="big-count">
+          <div class="bc-label">あつめた かず</div>
+          <div><span class="bc-num" id="countValue">0</span><span class="bc-unit"> ひき</span></div>
+        </div>
+        <div class="basket">
+          <div class="b-label">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16l-1.7 8.2A2.5 2.5 0 0 1 15.9 20H8.1a2.5 2.5 0 0 1-2.4-1.8L4 10Z" fill="#b07a45" stroke="#7c4f2a" stroke-width="1.4"/><path d="M7.5 10 12 3.5 16.5 10" fill="none" stroke="#7c4f2a" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 14h11" stroke="#7c4f2a" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg>
+            あつめた モグラたち
+          </div>
+          <div class="basket-icons" id="basketIcons"><span class="empty">まだ いないよ</span></div>
+        </div>
+      </div>
+
       <!-- HUD -->
-      <div class="hud" aria-live="off">
+      <div class="hud" id="hudRow" aria-live="off">
         <div class="stat"><div class="label">スコア</div><div class="value" id="scoreValue">0</div></div>
-        <div class="stat"><div class="label">たたいた数</div><div class="value"><span id="countValue">0</span><small> 匹</small></div></div>
-        <div class="stat"><div class="label">コンボ</div><div class="value" id="comboValue">0</div></div>
-        <div class="stat"><div class="label">のこり時間</div><div class="value"><span id="timeValue">60</span><small> 秒</small></div></div>
+        <div class="stat"><div class="label">れんぞく</div><div class="value" id="streakValue">0</div></div>
+        <div class="stat"><div class="label">金のモグラ</div><div class="value"><span id="goldValue">0</span><small> ひき</small></div></div>
+        <div class="stat" id="timeStat" hidden><div class="label">のこり時間</div><div class="value"><span id="timeValue">60</span><small> 秒</small></div></div>
       </div>
 
       <div class="progress-row">
         <div class="progress-meta">
-          <span id="goalLabel">目標 60匹まで</span>
-          <span class="pct" id="goalPct">0%</span>
+          <span id="goalLabel">つぎの ごほうびまで あと 10 ひき</span>
+          <span class="stars" id="starMeter" aria-label="もらった星"></span>
         </div>
         <div class="bar"><div id="goalBar"></div></div>
-        <div class="bar timebar"><div id="timeBar" style="width:100%"></div></div>
+        <div class="bar timebar" id="timeBarWrap" hidden><div id="timeBar" style="width:100%"></div></div>
+        <div class="mode-note" id="modeNote">じかん なし モード：おわりは じぶんで きめられるよ</div>
       </div>
-
-      <!-- Board -->
-      <div class="board-frame">
-        <div class="board" id="board" role="group" aria-label="もぐらの穴 3×3">
-          <!-- holes injected by JS -->
-          <div id="hammer" aria-hidden="true"></div>
-          <div id="banner" aria-hidden="true"><div class="banner-inner" id="bannerText">10匹達成！</div></div>
 
           <div class="overlay" id="startOverlay">
             <div class="overlay-card">
               <h2>もぐらたたき</h2>
-              <p>出てきたモグラをタップ（クリック）でたたこう。<br />
-              キーボードの <b>1〜9</b> でもたたけるよ。<br />
-              金のモグラは短い時間しか出ないけど高得点！<br />
-              失敗はないから、気楽にどうぞ。</p>
-              <button class="btn" id="startBtn" type="button">スタート（60秒）</button>
+              <div class="demo-stage" aria-hidden="true">
+                <div class="demo-clip"><div class="demo-mole" id="demoMole"></div></div>
+                <div class="demo-pit"></div>
+                <svg class="demo-hand" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L21 13 H15.5 V22 H8.5 V13 H3 Z" fill="#ffb703" stroke="#c78f08" stroke-width="1.4" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
+              </div>
+              <p>モグラが でたら タップ！<br />つかまえて あつめよう。</p>
+              <div class="mode-btns">
+                <button class="btn" id="startFreeBtn" type="button">あそぶ<span class="btn-sub">じかん なし ・ おわりは じぶんできめる</span></button>
+                <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">60びょう チャレンジ<span class="btn-sub">おとな・おにいさん おねえさん むけ</span></button>
+              </div>
             </div>
           </div>
 
           <div class="overlay" id="resultOverlay" hidden>
             <div class="overlay-card">
               <h2>おつかれさま！</h2>
-              <p id="resultComment">よくたたいたね。</p>
+              <p id="resultComment">よく あつめたね。</p>
+              <div class="result-big"><span class="rb-num" id="rCount">0</span> ひき つかまえた！</div>
               <div class="result-grid">
-                <div class="r"><div class="rl">たたいた数</div><div class="rv"><span id="rCount">0</span><small> 匹</small></div></div>
                 <div class="r"><div class="rl">スコア</div><div class="rv" id="rScore">0</div></div>
-                <div class="r"><div class="rl">最大コンボ</div><div class="rv" id="rCombo">0</div></div>
-                <div class="r"><div class="rl">金のモグラ</div><div class="rv"><span id="rGold">0</span><small> 匹</small></div></div>
-                <div class="r"><div class="rl">目標60匹</div><div class="rv" id="rPct">0<small>%</small></div></div>
-                <div class="r"><div class="rl">ハンマー</div><div class="rv" id="rHammer" style="font-size:15px; padding-top:6px;">ふつう</div></div>
+                <div class="r"><div class="rl">さいだい れんぞく</div><div class="rv" id="rCombo">0</div></div>
+                <div class="r"><div class="rl">金のモグラ</div><div class="rv"><span id="rGold">0</span><small> ひき</small></div></div>
+                <div class="r"><div class="rl">ごほうびの星</div><div class="rv" id="rStars">0<small> こ</small></div></div>
+                <div class="r"><div class="rl">あみ</div><div class="rv" id="rNet" style="font-size:15px; padding-top:6px;">ふつう</div></div>
+                <div class="r"><div class="rl">モード</div><div class="rv" id="rMode" style="font-size:15px; padding-top:6px;">じかん なし</div></div>
               </div>
-              <button class="btn" id="againBtn" type="button">もう一度たたく</button>
+              <div class="mode-btns">
+                <button class="btn" id="againBtn" type="button">また あそぶ</button>
+                <button class="btn secondary" id="modeBtn" type="button" style="flex:none;">モードを えらぶ</button>
+              </div>
             </div>
           </div>
+
+      <!-- Board -->
+      <div class="board-frame" id="boardFrame" hidden>
+        <div class="board" id="board" role="group" aria-label="モグラの穴 3×3">
+          <!-- holes injected by JS -->
+          <div id="net" aria-hidden="true"></div>
+          <div id="countPop" aria-hidden="true"><span class="cp-mole" id="countPopMole"></span><span class="cp-num" id="countPopNum">1</span></div>
+          <div id="banner" aria-hidden="true"><div class="banner-inner" id="bannerText">よく みてたね！<small>10ひき つかまえた！</small></div></div>
         </div>
       </div>
 
       <div class="controls">
-        <button class="btn secondary" id="pauseBtn" type="button" disabled>一時停止</button>
+        <button class="btn secondary" id="pauseBtn" type="button" disabled>やすむ</button>
+        <button class="btn secondary" id="endBtn" type="button" disabled>おしまいにする</button>
         <button class="btn secondary" id="soundBtn" type="button" aria-pressed="true">音：オン</button>
       </div>
 
       <section class="notes">
         <h2>あそびかた</h2>
         <ul>
-          <li>モグラが出たら、その穴をタップ／クリック。パソコンでは数字キー <b>1〜9</b>（左上から順）でもたたけます。</li>
-          <li>連続で当てるとコンボが伸びて、スコア倍率とポップ音のピッチが上がります。逃がしても罰はなし、コンボが切れるだけ。</li>
-          <li>たまに出る<b>金のモグラ</b>は出現時間が短いかわりに50点（倍率つき）。</li>
-          <li>30秒たつとハンマーが一段階大きくなって、たたくと隣の穴のモグラまで巻き込めるようになります。</li>
-          <li>60秒で終了。ゲームオーバーはありません。</li>
+          <li>モグラが顔を出したら、その穴をタップ。つかまえたモグラは喜んでジャンプして、上のカゴに集まります。パソコンでは数字キー <b>1〜9</b>（左上から順）でもつかまえられます。</li>
+          <li><b>じかん なし モード（ふだんはこちら）</b>：制限時間はありません。何匹集められるか、自分のペースで遊んで、「おしまいにする」で終われます。10匹ごとに星のごほうびと完了音が鳴ります。</li>
+          <li><b>60びょう チャレンジ</b>：大人の方向けの任意モードです。60秒で何匹集められるかに挑戦できます。</li>
+          <li>つづけて つかまえると「れんぞく」が伸びて、スコア倍率とポップ音のピッチが上がります。逃がしても罰はなし。れんぞくが静かに切れるだけで、記録（さいだい れんぞく）は残ります。</li>
+          <li>たまに出る<b>金のモグラ</b>は出ている時間が短いかわりに50点（倍率つき）。</li>
+          <li>30秒あそぶと虫取り網が大きくなって、つかまえると隣の穴のモグラまで一緒に集められるようになります。</li>
+          <li>しばらくタップがないと、出ているモグラが大きく揺れて光って「ここだよ」と教えてくれます。</li>
         </ul>
 
-        <h3>このゲームに入れた「爽快感」の工夫</h3>
-        <p>草刈りゲームの前に調べた「爽快感・達成感」の調査から、P0の工夫を1匹ごとに試せる形で入れました。</p>
+        <h3>今回の改良：5歳児向け設計（調査レポートに基づく）</h3>
+        <p>「5歳児でも遊べるゲームを100つくる」の調査レポート（ゲームジャンル×教育的価値の整理）で、このゲーム（アクション・反射ジャンル）は「○（工夫すれば遊べる）」と位置づけられ、特に「制限時間の外し方」と「叩く表現の置換」が課題とされました。その指摘と設計指針21項目に沿って、次の改良を入れました。</p>
         <ul>
-          <li><b class="tag">即時フィードバック</b>たたいた瞬間（同フレーム）にモグラがへこみ、短いポップ音と星の破片が返ります。待ち時間ゼロが「点の快感」の土台です。</li>
-          <li><b class="tag">痕跡</b>たたいた穴には星マークが数秒残ります。盤面そのものが「自分がやった分」の地図になっていきます。</li>
-          <li><b class="tag">小さな完了</b>10匹ごとにだけ「DING♪」の完了音と「○匹達成！」表示＋一瞬のヒットストップ。毎匹鳴らすと安っぽくなるので、区切りでだけ確定させます。全体の匹数と目標60匹に対する％も常時表示しています。</li>
-          <li><b class="tag">増幅</b>連続ヒットでスコア倍率（最大×5）とポップ音のピッチが上がります。切れても何も失わず、最大コンボだけが記録に残ります。</li>
-          <li><b class="tag gold">リスクとリターン</b>金のモグラは「短い出現時間」と「高得点」を近づけて置きました。爆弾モグラのような罰は入れていません。</li>
-          <li><b class="tag">成長</b>30秒でハンマーが大きくなり、隣の穴まで巻き込めるように。「前よりできることが増えた」が目に見えます。</li>
+          <li><b class="tag pink">制限時間を外す</b>（指針14）標準モードは制限時間なしにし、終わりは子ども自身が決められる形にしました。60秒モードは大人が選べる任意モードとして残しています。時間で「失敗」になる設計は避け、時間は「区切って次に進む」ためだけに使います。</li>
+          <li><b class="tag pink">「叩く」→「集める」</b>（指針20）ハンマーを虫取り網に替え、ヒット表現を「つかまえたモグラが笑顔でジャンプしてカゴに集まる」に置き換えました。モグラを倒す・潰す表現はありません。文言も「つかまえる／あつめる」に寄せています（タイトルだけは元のまま）。</li>
+          <li><b class="tag">文字に頼らない案内</b>（指針1・2・5）スタート画面は文章でなく、顔を出すモグラのアニメーションで遊び方を示します。穴とモグラは大きく、タップ対象は指1本で十分な大きさです。すべての操作に音＋動き＋絵の変化で即座に応答します（指針16）。</li>
+          <li><b class="tag">足場かけヒント</b>（指針9・14）約7秒タップがないと、出ているモグラが大きく揺れて光り、矢印が「ここだよ」と示します。Sesame Workshop の就学前向け設計ガイドにある「無操作時のヒント提示（ゲームで6〜8秒）」の目安に合わせたものです。間違えても逃がしても罰はなく、励まし→ヒントの順で支えます。</li>
+          <li><b class="tag gold">過程への称賛と数え上げ</b>（指針11）10匹ごとの完了音（DING）は残しつつ、表示は「よく みてたね！」など過程を褒める言葉にしました。つかまえるたびに集めた数が大きな数字で数え上がり、カゴにモグラが増えていくので、「数への関心」（文部科学省「幼児期の終わりまでに育ってほしい姿」⑧数量への関心・感覚）につながる見せ方にしています。</li>
+          <li><b class="tag">気持ちよさはそのまま</b>前回の「爽快感」調査で入れた工夫——たたいた瞬間と同フレームで返る即時フィードバック、穴に残る花の痕跡、れんぞくで上がるポップ音の音階、30秒での成長（大きな網）——は骨格ごと残しました。出てくる速さは全体に少しゆっくりにし、同時に顔を出すのは最大2匹までに抑えています。</li>
         </ul>
-        <p>逆に、画面シェイクとパーティクルは調査の「盛りすぎ注意」に沿って最小限にしています。</p>
+        <p>正直な留保も書いておきます。この遊びで伸びるのは「出てきたものを見落とさずにタップする」という、この遊びの中での反応までで、「注意力全般が上がる」といった広い効果は研究では示されていません（脳トレ型の遠い転移は証拠不十分とする総説があります）。だからこのページでも、育つ力を大げさには言わないことにしています。</p>
+        <p class="src">出典：Sesame Workshop『Best Practices: Designing Touch Tablet Experiences for Preschoolers』(2012) <a href="https://regmedia.co.uk/2012/12/19/sesame_street_best_practices.pdf">regmedia.co.uk</a>／ American Academy of Pediatrics『Media and Young Minds』(2016) <a href="https://publications.aap.org/pediatrics/article/138/5/e20162591/60503/Media-and-Young-Minds?autologincheck=redirected">publications.aap.org</a>／ Hirsh-Pasek et al. (2015) 学習アプリの4本柱 <a href="https://www.psychologicalscience.org/news/releases/science-of-learning-can-help-parents-developers-grade-educational-apps.html">psychologicalscience.org</a>／ 文部科学省「幼児期の終わりまでに育ってほしい姿」 <a href="http://www.mext.go.jp:443/content/1422303_08.pdf">mext.go.jp</a></p>
       </section>
 
-      <p class="foot">修行ゲーム 2個目 ／ 100個チャレンジ</p>
+      <p class="foot">5歳児でも遊べるゲーム 2個目 ／ 100個チャレンジ</p>
     </div>
 
     <script>
     (function () {
       "use strict";
 
-      var GAME_MS = 60000;
-      var GOAL = 60;
+      var GAME_MS = 60000;      // 60秒モード用
+      var MILESTONE = 10;       // ごほうびの区切り
       var GOLD_CHANCE = 0.11;
+      var HINT_AFTER_MS = 7000; // 無操作ヒント（Sesame目安 6〜8秒）
 
       var board = document.getElementById("board");
-      var hammerEl = document.getElementById("hammer");
+      var netEl = document.getElementById("net");
       var bannerEl = document.getElementById("banner");
       var bannerText = document.getElementById("bannerText");
       var scoreValue = document.getElementById("scoreValue");
       var countValue = document.getElementById("countValue");
-      var comboValue = document.getElementById("comboValue");
+      var streakValue = document.getElementById("streakValue");
+      var goldValue = document.getElementById("goldValue");
       var timeValue = document.getElementById("timeValue");
+      var timeStat = document.getElementById("timeStat");
+      var hudRow = document.getElementById("hudRow");
       var goalBar = document.getElementById("goalBar");
-      var goalPct = document.getElementById("goalPct");
       var goalLabel = document.getElementById("goalLabel");
+      var starMeter = document.getElementById("starMeter");
       var timeBar = document.getElementById("timeBar");
+      var timeBarWrap = document.getElementById("timeBarWrap");
+      var modeNote = document.getElementById("modeNote");
+      var basketIcons = document.getElementById("basketIcons");
+      var collectionPanel = document.getElementById("collectionPanel");
+      var countPop = document.getElementById("countPop");
+      var countPopNum = document.getElementById("countPopNum");
+      var countPopMole = document.getElementById("countPopMole");
       var startOverlay = document.getElementById("startOverlay");
       var resultOverlay = document.getElementById("resultOverlay");
-      var startBtn = document.getElementById("startBtn");
-      var againBtn = document.getElementById("againBtn");
+      var boardFrame = document.getElementById("boardFrame");
       var pauseBtn = document.getElementById("pauseBtn");
+      var endBtn = document.getElementById("endBtn");
       var soundBtn = document.getElementById("soundBtn");
 
-      var MOLE_SVG = function (gold) {
+      var MOLE_SVG = function (gold, happy) {
         var body = gold ? "#f6c945" : "#9a6a44";
         var bodyDark = gold ? "#d99e12" : "#7a4f2c";
         var belly = gold ? "#ffe9a8" : "#d9b48c";
         var nose = gold ? "#e2703a" : "#e58aa5";
+        var eyes = happy
+          ? '<path d="M35 38 Q42 31 49 38" stroke="#2b1a0c" stroke-width="3" fill="none" stroke-linecap="round"/>' +
+            '<path d="M51 38 Q58 31 65 38" stroke="#2b1a0c" stroke-width="3" fill="none" stroke-linecap="round"/>'
+          : '<circle cx="42" cy="38" r="3.4" fill="#2b1a0c"/>' +
+            '<circle cx="58" cy="38" r="3.4" fill="#2b1a0c"/>' +
+            '<circle cx="43.2" cy="36.8" r="1.2" fill="#fff"/>' +
+            '<circle cx="59.2" cy="36.8" r="1.2" fill="#fff"/>';
+        var mouth = happy
+          ? '<path d="M40 54 Q50 66 60 54 Q50 59 40 54 Z" fill="#7a3b1e"/>' +
+            '<circle cx="33" cy="50" r="4.5" fill="#f2a0a0" opacity="0.75"/>' +
+            '<circle cx="67" cy="50" r="4.5" fill="#f2a0a0" opacity="0.75"/>'
+          : '<rect x="45.5" y="52" width="9" height="8" rx="2" fill="#fff" stroke="#c9b18a" stroke-width="0.8"/>' +
+            '<path d="M38 56 Q50 63 62 56" stroke="#5b3a1e" stroke-width="2.2" fill="none" stroke-linecap="round"/>';
         return '' +
         '<svg viewBox="0 0 100 100" aria-hidden="true">' +
           '<ellipse cx="50" cy="98" rx="40" ry="52" fill="' + body + '"/>' +
@@ -449,26 +622,37 @@
           '<circle cx="26" cy="34" r="5" fill="' + bodyDark + '"/>' +
           '<circle cx="74" cy="34" r="5" fill="' + bodyDark + '"/>' +
           '<circle cx="50" cy="40" r="21" fill="' + body + '"/>' +
-          '<circle cx="42" cy="38" r="3.4" fill="#2b1a0c"/>' +
-          '<circle cx="58" cy="38" r="3.4" fill="#2b1a0c"/>' +
-          '<circle cx="43.2" cy="36.8" r="1.2" fill="#fff"/>' +
-          '<circle cx="59.2" cy="36.8" r="1.2" fill="#fff"/>' +
+          eyes +
           '<ellipse cx="50" cy="47" rx="6" ry="4.4" fill="' + nose + '"/>' +
-          '<rect x="45.5" y="52" width="9" height="8" rx="2" fill="#fff" stroke="#c9b18a" stroke-width="0.8"/>' +
-          '<path d="M38 56 Q50 63 62 56" stroke="#5b3a1e" stroke-width="2.2" fill="none" stroke-linecap="round"/>' +
+          mouth +
           (gold ? '<path d="M50 8 l3.2 6.6 7.3 1 -5.3 5.1 1.3 7.2 -6.5 -3.4 -6.5 3.4 1.3 -7.2 -5.3 -5.1 7.3 -1 Z" fill="#ffdf4d" stroke="#c78f08" stroke-width="1.4"/>' : '') +
         '</svg>';
       };
-      var STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 l3.1 6.9 7.5.7 -5.6 5 1.6 7.4 -6.6 -3.8 -6.6 3.8 1.6 -7.4 -5.6 -5 7.5 -.7 Z" fill="#ffb703" stroke="#e07b2a" stroke-width="1.2"/></svg>';
-      var HAMMER_SVG = function () {
+      var MINI_MOLE_SVG = function (gold) {
+        var body = gold ? "#f6c945" : "#9a6a44";
+        var belly = gold ? "#ffe9a8" : "#d9b48c";
         return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
-          '<rect x="58" y="46" width="11" height="50" rx="5" transform="rotate(38 63 71)" fill="#b07a45" stroke="#7c4f2a" stroke-width="2"/>' +
-          '<g transform="rotate(38 40 34)">' +
-            '<rect x="8" y="20" width="62" height="27" rx="8" fill="#8d99ae" stroke="#5c6779" stroke-width="2.5"/>' +
-            '<rect x="8" y="29" width="62" height="4" fill="#aeb9c9"/>' +
+          '<circle cx="24" cy="30" r="11" fill="' + body + '"/><circle cx="76" cy="30" r="11" fill="' + body + '"/>' +
+          '<circle cx="50" cy="55" r="38" fill="' + body + '"/>' +
+          '<ellipse cx="50" cy="68" rx="20" ry="17" fill="' + belly + '"/>' +
+          '<circle cx="38" cy="48" r="4" fill="#2b1a0c"/><circle cx="62" cy="48" r="4" fill="#2b1a0c"/>' +
+          '<ellipse cx="50" cy="58" rx="6.5" ry="4.8" fill="#e58aa5"/></svg>';
+      };
+      var STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.8 l3.1 6.9 7.5.7 -5.6 5 1.6 7.4 -6.6 -3.8 -6.6 3.8 1.6 -7.4 -5.6 -5 7.5 -.7 Z" fill="#ffb703" stroke="#e07b2a" stroke-width="1.2"/></svg>';
+      var FLOWER_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#f28bb4" stroke="#d96a97" stroke-width="1"><circle cx="12" cy="5.6" r="4"/><circle cx="18.4" cy="10.2" r="4"/><circle cx="15.9" cy="17.8" r="4"/><circle cx="8.1" cy="17.8" r="4"/><circle cx="5.6" cy="10.2" r="4"/></g><circle cx="12" cy="11.7" r="3.4" fill="#ffb703"/></svg>';
+      var HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C5 15.5 2.5 11.3 2.5 7.9 C2.5 4.9 4.8 2.8 7.5 2.8 C9.3 2.8 11 3.7 12 5.2 C13 3.7 14.7 2.8 16.5 2.8 C19.2 2.8 21.5 4.9 21.5 7.9 C21.5 11.3 19 15.5 12 21Z" fill="#f28bb4" stroke="#d96a97" stroke-width="1.2"/></svg>';
+      var ARROW_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22 L3.5 10.5 H9 V2.5 H15 V10.5 H20.5 Z" fill="#ffb703" stroke="#c78f08" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+      var NET_SVG = function () {
+        return '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+          '<rect x="56" y="52" width="10" height="46" rx="5" transform="rotate(-38 61 75)" fill="#b07a45" stroke="#7c4f2a" stroke-width="2"/>' +
+          '<g transform="rotate(-38 36 34)">' +
+            '<circle cx="36" cy="34" r="27" fill="rgba(255,255,255,0.35)" stroke="#5c8a3c" stroke-width="4"/>' +
+            '<path d="M14 22 Q36 34 58 22 M11 34 H61 M14 46 Q36 34 58 46 M24 10 Q36 34 24 58 M36 7 V61 M48 10 Q36 34 48 58" stroke="rgba(92,138,60,0.55)" stroke-width="1.6" fill="none"/>' +
           '</g></svg>';
       };
-      hammerEl.innerHTML = HAMMER_SVG();
+      netEl.innerHTML = NET_SVG();
+      document.getElementById("demoMole").innerHTML = MOLE_SVG(false, false);
+      countPopMole.innerHTML = MOLE_SVG(false, true);
 
       // ----- build holes -----
       var holes = [];
@@ -477,23 +661,25 @@
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "hole";
+          btn.disabled = true; // ゲーム中だけ押せる（開始前はオーバーレイ下で無効）
           btn.setAttribute("aria-label", "穴 " + (idx + 1));
           btn.innerHTML =
             '<span class="key-hint">' + (idx + 1) + '</span>' +
+            '<span class="hint-arrow">' + ARROW_SVG + '</span>' +
             '<span class="pit"></span>' +
             '<span class="mole-clip"><span class="mole"></span></span>' +
             '<span class="mound"></span>';
-          board.insertBefore(btn, hammerEl);
+          board.insertBefore(btn, netEl);
           var h = {
             idx: idx, el: btn,
             moleEl: btn.querySelector(".mole"),
-            mole: null, // {type:'normal'|'gold', hideAt:number, hit:boolean}
+            mole: null,
             traceEl: null, traceTimer: null
           };
           btn.addEventListener("pointerdown", function (e) {
             e.preventDefault();
-            swingHammerAt(btn);
-            whack(idx, true);
+            swingNetAt(btn);
+            catchAt(idx, true);
           });
           holes.push(h);
         })(i);
@@ -522,8 +708,8 @@
         osc.connect(gain); gain.connect(audioCtx.destination);
         osc.start(t); osc.stop(t + dur + 0.02);
       }
-      function playPop(combo) {
-        var base = 340 + Math.min(combo, 24) * 16;
+      function playPop(streak) {
+        var base = 340 + Math.min(streak, 24) * 16;
         tone(base, 0.09, "triangle", 0.25, 0, base * 1.7);
         tone(base * 2, 0.05, "sine", 0.10, 0);
       }
@@ -544,28 +730,46 @@
 
       // ----- game state -----
       var state = "idle"; // idle | playing | paused | done
-      var elapsed = 0;          // ms of active play
+      var mode = "free";  // free | timed
+      var elapsed = 0;
       var lastTs = null;
-      var hitstopUntil = 0;     // performance.now() timestamp
-      var score = 0, count = 0, combo = 0, maxCombo = 0, goldCount = 0;
+      var hitstopUntil = 0;
+      var score = 0, count = 0, streak = 0, maxStreak = 0, goldCount = 0;
+      var collected = []; // 'normal' | 'gold'
       var nextSpawnAt = 0;
-      var hammerBig = false;
+      var lastActivity = 0; // elapsed of last catch / tap
+      var netBig = false;
       var rafId = null;
       var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+      var PRAISE = [
+        "よく みてたね！",
+        "じょうずに つかまえたね！",
+        "よく がんばったね！",
+        "みつけるのが じょうずだね！",
+        "たのしく あつめたね！"
+      ];
+
       function multiplier() {
-        if (combo >= 20) return 5;
-        if (combo >= 10) return 3;
-        if (combo >= 5) return 2;
+        if (streak >= 20) return 5;
+        if (streak >= 10) return 3;
+        if (streak >= 5) return 2;
         return 1;
       }
       function difficulty() {
-        var t = Math.min(elapsed / GAME_MS, 1);
+        var t = Math.min(elapsed / 90000, 1);
         return {
-          spawnEvery: 880 - 420 * t,          // 880 -> 460ms
-          upTime: 1150 - 480 * t,             // 1150 -> 670ms
-          maxUp: elapsed < 15000 ? 1 : (elapsed < 38000 ? 2 : 3)
+          spawnEvery: 980 - 340 * t,   // 980 -> 640ms（以前よりゆっくり）
+          upTime: 1550 - 480 * t,      // 1550 -> 1070ms
+          maxUp: elapsed < 20000 ? 1 : 2
         };
+      }
+
+      function clearHints() {
+        holes.forEach(function (h) { h.el.classList.remove("hint"); });
+      }
+      function applyHints() {
+        holes.forEach(function (h) { h.el.classList.toggle("hint", !!h.mole && !h.mole.hit); });
       }
 
       function spawnMole() {
@@ -574,11 +778,10 @@
         var h = free[Math.floor(Math.random() * free.length)];
         var d = difficulty();
         var gold = Math.random() < GOLD_CHANCE;
-        var upTime = gold ? d.upTime * 0.55 : d.upTime * (0.85 + Math.random() * 0.35);
+        var upTime = gold ? d.upTime * 0.7 : d.upTime * (0.85 + Math.random() * 0.35);
         h.mole = { type: gold ? "gold" : "normal", hideAt: elapsed + upTime, hit: false };
-        h.moleEl.innerHTML = MOLE_SVG(gold);
-        h.moleEl.classList.remove("hit");
-        // force reflow so transition plays
+        h.moleEl.innerHTML = MOLE_SVG(gold, false);
+        h.moleEl.classList.remove("caught");
         void h.moleEl.offsetWidth;
         h.moleEl.classList.add("up");
       }
@@ -586,43 +789,66 @@
       function hideMole(h, escaped) {
         if (!h.mole) return;
         h.mole = null;
+        h.el.classList.remove("hint");
         h.moleEl.classList.remove("up");
-        h.moleEl.classList.remove("hit");
-        if (escaped && state === "playing") {
-          combo = 0;
+        h.moleEl.classList.remove("caught");
+        if (escaped && state === "playing" && streak !== 0) {
+          // 罰なし：れんぞくは静かに切れるだけ。最大記録は残る
+          streak = 0;
           updateHUD();
         }
       }
 
-      function showTrace(h) {
+      function showTrace(h, gold) {
         if (h.traceEl) { h.traceEl.remove(); clearTimeout(h.traceTimer); }
         var t = document.createElement("span");
         t.className = "trace";
-        t.innerHTML = STAR_SVG;
+        t.innerHTML = gold ? STAR_SVG : FLOWER_SVG;
         h.el.appendChild(t);
         h.traceEl = t;
-        h.traceTimer = setTimeout(function () { t.remove(); if (h.traceEl === t) h.traceEl = null; }, 4100);
+        h.traceTimer = setTimeout(function () { t.remove(); if (h.traceEl === t) h.traceEl = null; }, 5100);
       }
 
-      function burst(h) {
+      function burst(h, gold) {
         if (reducedMotion) return;
         var rect = board.getBoundingClientRect();
         var hr = h.el.getBoundingClientRect();
         var cx = hr.left - rect.left + hr.width / 2;
         var cy = hr.top - rect.top + hr.height * 0.35;
-        for (var k = 0; k < 5; k++) {
+        var icons = gold ? [STAR_SVG, STAR_SVG, HEART_SVG] : [FLOWER_SVG, HEART_SVG, STAR_SVG];
+        for (var k = 0; k < 6; k++) {
           var p = document.createElement("span");
           p.className = "particle";
-          p.innerHTML = STAR_SVG;
-          var ang = (-110 + k * 35 + Math.random() * 14) * Math.PI / 180;
+          p.innerHTML = icons[k % icons.length];
+          var ang = (-110 + k * 32 + Math.random() * 14) * Math.PI / 180;
           var dist = 30 + Math.random() * 26;
           p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
           p.style.setProperty("--dy", Math.sin(ang) * dist + "px");
           p.style.setProperty("--rot", (Math.random() * 160 - 80) + "deg");
-          p.style.left = (cx - 6) + "px";
-          p.style.top = (cy - 6) + "px";
+          p.style.left = (cx - 7) + "px";
+          p.style.top = (cy - 7) + "px";
           board.appendChild(p);
-          (function (el) { setTimeout(function () { el.remove(); }, 560); })(p);
+          (function (el) { setTimeout(function () { el.remove(); }, 620); })(p);
+        }
+      }
+
+      function rewardBurst() {
+        if (reducedMotion) return;
+        var rect = board.getBoundingClientRect();
+        for (var k = 0; k < 10; k++) {
+          var p = document.createElement("span");
+          p.className = "particle";
+          p.style.width = "18px"; p.style.height = "18px";
+          p.innerHTML = k % 2 ? FLOWER_SVG : STAR_SVG;
+          var ang = (k / 10) * Math.PI * 2;
+          var dist = 60 + Math.random() * 50;
+          p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+          p.style.setProperty("--dy", Math.sin(ang) * dist + "px");
+          p.style.setProperty("--rot", (Math.random() * 200 - 100) + "deg");
+          p.style.left = (rect.width / 2 - 9) + "px";
+          p.style.top = (rect.height / 2 - 9) + "px";
+          board.appendChild(p);
+          (function (el) { setTimeout(function () { el.remove(); }, 620); })(p);
         }
       }
 
@@ -638,7 +864,61 @@
         setTimeout(function () { s.remove(); }, 720);
       }
 
-      function showBanner(text) {
+      function showCountPop() {
+        countPopNum.textContent = count;
+        countPopMole.innerHTML = MOLE_SVG(collected[collected.length - 1] === "gold", true);
+        countPop.classList.remove("show");
+        void countPop.offsetWidth;
+        countPop.classList.add("show");
+      }
+
+      function flyToBasket(h, gold) {
+        renderBasket();
+        if (reducedMotion || !h.el.animate) return;
+        var hr = h.el.getBoundingClientRect();
+        var br = collectionPanel.getBoundingClientRect();
+        var fly = document.createElement("span");
+        fly.className = "fly-mole";
+        fly.innerHTML = MOLE_SVG(gold, true);
+        fly.style.left = (hr.left + hr.width / 2 - 26) + "px";
+        fly.style.top = (hr.top + hr.height * 0.2) + "px";
+        document.body.appendChild(fly);
+        var dx = (br.left + br.width / 2) - (hr.left + hr.width / 2);
+        var dy = (br.top + br.height / 2) - (hr.top + hr.height * 0.2 + 26);
+        var anim = fly.animate([
+          { transform: "translate(0,0) scale(1)", opacity: 1 },
+          { transform: "translate(" + dx * 0.5 + "px," + (dy - 60) + "px) scale(0.75)", opacity: 1, offset: 0.55 },
+          { transform: "translate(" + dx + "px," + dy + "px) scale(0.3)", opacity: 0.4 }
+        ], { duration: 600, easing: "ease-in-out" });
+        if (anim && anim.finished) { anim.finished.then(function () { fly.remove(); }).catch(function () { fly.remove(); }); }
+        setTimeout(function () { fly.remove(); }, 750);
+      }
+
+      function renderBasket() {
+        if (!collected.length) {
+          basketIcons.innerHTML = '<span class="empty">まだ いないよ</span>';
+          return;
+        }
+        var html = "";
+        var show = collected.slice(-24);
+        show.forEach(function (t) {
+          html += '<span class="mini">' + MINI_MOLE_SVG(t === "gold") + '</span>';
+        });
+        if (collected.length > 24) html += '<span class="more">… あと ' + (collected.length - 24) + ' ひき</span>';
+        basketIcons.innerHTML = html;
+      }
+
+      function showBanner(main, sub) {
+        bannerText.innerHTML = "";
+        bannerText.appendChild(document.createTextNode(main));
+        var sm = document.createElement("small");
+        sm.textContent = sub;
+        bannerText.appendChild(sm);
+        bannerEl.classList.remove("show");
+        void bannerEl.offsetWidth;
+        bannerEl.classList.add("show");
+      }
+      function showBannerSingle(text) {
         bannerText.textContent = text;
         bannerEl.classList.remove("show");
         void bannerEl.offsetWidth;
@@ -652,48 +932,57 @@
         setTimeout(function () { board.classList.remove("hitstop"); }, 50);
       }
 
-      function whack(idx, direct) {
+      function catchAt(idx, direct) {
         if (state !== "playing") return;
         ensureAudio();
+        lastActivity = elapsed;
+        clearHints();
         var h = holes[idx];
-        var hitAny = false;
-        if (h.mole) { hitMole(h); hitAny = true; }
-        // grown hammer splashes to orthogonal neighbours
-        if (direct && hammerBig) {
+        if (h.mole) { catchMole(h); }
+        // 大きな網は隣の穴まで一緒に集める
+        if (direct && netBig) {
           var row = Math.floor(idx / 3), col = idx % 3;
           var nb = [];
           if (row > 0) nb.push(idx - 3);
           if (row < 2) nb.push(idx + 3);
           if (col > 0) nb.push(idx - 1);
           if (col < 2) nb.push(idx + 1);
-          nb.forEach(function (n) { if (holes[n].mole) { hitMole(holes[n]); hitAny = true; } });
+          nb.forEach(function (n) { if (holes[n].mole) catchMole(holes[n]); });
         }
-        return hitAny;
       }
 
-      function hitMole(h) {
+      function catchMole(h) {
         var m = h.mole;
         if (!m || m.hit) return;
         m.hit = true;
+        lastActivity = elapsed;
+        h.el.classList.remove("hint");
         var gold = m.type === "gold";
-        combo += 1;
-        if (combo > maxCombo) maxCombo = combo;
+        streak += 1;
+        if (streak > maxStreak) maxStreak = streak;
         var mult = multiplier();
         var pts = (gold ? 50 : 10) * mult;
         score += pts;
         count += 1;
-        if (gold) { goldCount += 1; playGold(); } else { playPop(combo); }
+        collected.push(gold ? "gold" : "normal");
+        if (gold) { goldCount += 1; playGold(); } else { playPop(streak); }
 
-        h.moleEl.classList.add("hit");
-        showTrace(h);
-        burst(h);
+        // 喜んでジャンプする笑顔に切り替え
+        h.moleEl.innerHTML = MOLE_SVG(gold, true);
+        h.moleEl.classList.add("caught");
+        showTrace(h, gold);
+        burst(h, gold);
         floatScore(h, "+" + pts + (mult > 1 ? " ×" + mult : ""), gold);
-        setTimeout(function () { hideMole(h, false); }, 90);
+        showCountPop();
+        flyToBasket(h, gold);
+        setTimeout(function () { hideMole(h, false); }, 300);
 
-        // milestone every 10
-        if (count % 10 === 0) {
+        // 10匹ごとの区切り：完了音＋過程への称賛＋星と花のごほうび
+        if (count % MILESTONE === 0) {
           playDing();
-          showBanner(count + "匹達成！");
+          var praise = PRAISE[(count / MILESTONE - 1) % PRAISE.length];
+          showBanner(praise, count + "ひき つかまえた！");
+          rewardBurst();
           hitstop();
         }
         updateHUD();
@@ -702,15 +991,18 @@
       function updateHUD() {
         scoreValue.textContent = score;
         countValue.textContent = count;
-        comboValue.textContent = combo;
-        comboValue.classList.toggle("hot", combo >= 5);
-        var pct = Math.min(100, Math.round(count / GOAL * 100));
-        goalBar.style.width = pct + "%";
-        goalPct.textContent = pct + "%";
-        goalLabel.textContent = count >= GOAL ? "目標60匹クリア！" : "目標 60匹まで あと " + (GOAL - count) + " 匹";
+        streakValue.textContent = streak;
+        streakValue.classList.toggle("hot", streak >= 5);
+        goldValue.textContent = goldCount;
+        var inCycle = count % MILESTONE;
+        goalBar.style.width = (inCycle / MILESTONE * 100) + "%";
+        goalLabel.textContent = "つぎの ごほうびまで あと " + (MILESTONE - inCycle) + " ひき";
+        var stars = Math.floor(count / MILESTONE);
+        starMeter.textContent = stars ? "★".repeat(Math.min(stars, 12)) + (stars > 12 ? " ×" + stars : "") : "";
       }
 
       function updateTime() {
+        if (mode !== "timed") return;
         var remain = Math.max(0, GAME_MS - elapsed);
         var sec = Math.ceil(remain / 1000);
         timeValue.textContent = sec;
@@ -726,111 +1018,154 @@
         if (ts >= hitstopUntil) {
           elapsed += dt;
 
-          // hammer growth at 30s
-          if (!hammerBig && elapsed >= 30000) {
-            hammerBig = true;
-            hammerEl.classList.add("big");
+          // 30秒で網が大きくなる（成長）
+          if (!netBig && elapsed >= 30000) {
+            netBig = true;
+            netEl.classList.add("big");
             playGrow();
-            showBanner("ハンマーが大きくなった！");
+            showBannerSingle("あみが 大きくなった！");
           }
 
-          // spawn
           var d = difficulty();
           var upCount = holes.filter(function (h) { return !!h.mole; }).length;
           if (elapsed >= nextSpawnAt && upCount < d.maxUp) {
             spawnMole();
             nextSpawnAt = elapsed + d.spawnEvery * (0.7 + Math.random() * 0.6);
           }
-          // escapes
           holes.forEach(function (h) {
             if (h.mole && !h.mole.hit && elapsed >= h.mole.hideAt) hideMole(h, true);
           });
 
+          // 足場かけヒント：しばらくタップがなければ出ているモグラが揺れて光る
+          if (elapsed - lastActivity >= HINT_AFTER_MS) applyHints();
+
           updateTime();
-          if (elapsed >= GAME_MS) { finish(); return; }
+          if (mode === "timed" && elapsed >= GAME_MS) { finish(); return; }
         }
         rafId = requestAnimationFrame(tick);
       }
 
-      function startGame() {
+      function startGame(selectedMode) {
         ensureAudio();
-        score = 0; count = 0; combo = 0; maxCombo = 0; goldCount = 0;
+        mode = selectedMode;
+        score = 0; count = 0; streak = 0; maxStreak = 0; goldCount = 0;
+        collected = [];
         elapsed = 0; lastTs = null; hitstopUntil = 0;
-        hammerBig = false;
-        hammerEl.classList.remove("big");
+        lastActivity = 0;
+        netBig = false;
+        netEl.classList.remove("big");
         nextSpawnAt = 350;
         holes.forEach(function (h) {
           h.mole = null;
-          h.moleEl.classList.remove("up", "hit");
+          h.el.classList.remove("hint");
+          h.moleEl.classList.remove("up", "caught");
           if (h.traceEl) { h.traceEl.remove(); h.traceEl = null; }
         });
+        var timed = mode === "timed";
+        timeStat.hidden = !timed;
+        timeBarWrap.hidden = !timed;
+        hudRow.classList.toggle("has-time", timed);
+        modeNote.textContent = timed
+          ? "60びょう チャレンジ中"
+          : "じかん なし モード：おわりは じぶんで きめられるよ";
         state = "playing";
+        holes.forEach(function (h) { h.el.disabled = false; });
+        boardFrame.hidden = false;
         startOverlay.hidden = true;
         resultOverlay.hidden = true;
         pauseBtn.disabled = false;
-        pauseBtn.textContent = "一時停止";
+        endBtn.disabled = false;
+        pauseBtn.textContent = "やすむ";
+        renderBasket();
         updateHUD();
         updateTime();
+        if (timed) timeBar.style.width = "100%";
         cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(tick);
       }
 
       function finish() {
+        if (state === "done") return;
         state = "done";
         cancelAnimationFrame(rafId);
-        holes.forEach(function (h) { hideMole(h, false); });
+        holes.forEach(function (h) { h.el.disabled = true; hideMole(h, false); });
+        clearHints();
         document.getElementById("rCount").textContent = count;
         document.getElementById("rScore").textContent = score;
-        document.getElementById("rCombo").textContent = maxCombo;
+        document.getElementById("rCombo").textContent = maxStreak;
         document.getElementById("rGold").textContent = goldCount;
-        document.getElementById("rPct").innerHTML = Math.min(100, Math.round(count / GOAL * 100)) + "<small>%</small>";
-        document.getElementById("rHammer").textContent = hammerBig ? "大きくなった" : "ふつう";
+        document.getElementById("rStars").innerHTML = Math.floor(count / MILESTONE) + "<small> こ</small>";
+        document.getElementById("rNet").textContent = netBig ? "大きくなった" : "ふつう";
+        document.getElementById("rMode").textContent = mode === "timed" ? "60びょう" : "じかん なし";
         var c = document.getElementById("resultComment");
-        if (count >= GOAL) c.textContent = "目標60匹クリア！すごい反射神経だね。";
-        else if (count >= 40) c.textContent = "あと少しで目標。金のモグラを狙うと伸びるよ。";
-        else if (count >= 20) c.textContent = "いい調子。コンボをつなぐとスコアが伸びるよ。";
-        else c.textContent = "まずはモグラの出るリズムに慣れていこう。";
+        if (count >= 30) c.textContent = "たくさん あつめたね。よく みて、よく がんばったね！";
+        else if (count >= 15) c.textContent = "よく あつめたね。さいごまで じょうずに つかまえたね。";
+        else if (count >= 5) c.textContent = "よく みつけたね。つぎは もっと あつまるかも。";
+        else if (count >= 1) c.textContent = "はじめの 一歩！つかまえられたね。";
+        else c.textContent = "モグラの でる リズムに 慣れていこう。";
         playDing();
+        boardFrame.hidden = true;
         resultOverlay.hidden = false;
         pauseBtn.disabled = true;
+        endBtn.disabled = true;
         updateTime();
       }
 
-      // ----- hammer cursor -----
-      function moveHammer(clientX, clientY) {
+      function backToStart() {
+        state = "idle";
+        cancelAnimationFrame(rafId);
+        holes.forEach(function (h) { h.el.disabled = true; hideMole(h, false); });
+        clearHints();
+        boardFrame.hidden = true;
+        resultOverlay.hidden = true;
+        startOverlay.hidden = false;
+        pauseBtn.disabled = true;
+        endBtn.disabled = true;
+      }
+
+      // ----- net cursor -----
+      function moveNet(clientX, clientY) {
         var rect = board.getBoundingClientRect();
         var x = clientX - rect.left, y = clientY - rect.top;
-        var size = hammerBig ? 98 : 74;
-        hammerEl.style.left = (x - size * 0.32) + "px";
-        hammerEl.style.top = (y - size * 0.72) + "px";
-        hammerEl.style.opacity = "1";
+        var size = netBig ? 102 : 76;
+        netEl.style.left = (x - size * 0.30) + "px";
+        netEl.style.top = (y - size * 0.30) + "px";
+        netEl.style.opacity = "1";
       }
-      function swingHammerAt(el) {
+      function swingNetAt(el) {
         var r = el.getBoundingClientRect();
-        moveHammer(r.left + r.width / 2, r.top + r.height / 2);
+        moveNet(r.left + r.width / 2, r.top + r.height / 2);
         swing();
       }
       function swing() {
-        hammerEl.classList.remove("swing");
-        void hammerEl.offsetWidth;
-        hammerEl.classList.add("swing");
+        netEl.classList.remove("swing");
+        void netEl.offsetWidth;
+        netEl.classList.add("swing");
       }
-      board.addEventListener("pointermove", function (e) { moveHammer(e.clientX, e.clientY); });
-      board.addEventListener("pointerleave", function () { hammerEl.style.opacity = "0"; });
-      board.addEventListener("pointerdown", function () { swing(); });
+      board.addEventListener("pointermove", function (e) { moveNet(e.clientX, e.clientY); });
+      board.addEventListener("pointerleave", function () { netEl.style.opacity = "0"; });
+      board.addEventListener("pointerdown", function () {
+        swing();
+        if (state === "playing") { lastActivity = elapsed; }
+      });
 
       // ----- controls -----
-      startBtn.addEventListener("click", startGame);
-      againBtn.addEventListener("click", startGame);
+      document.getElementById("startFreeBtn").addEventListener("click", function () { startGame("free"); });
+      document.getElementById("startTimedBtn").addEventListener("click", function () { startGame("timed"); });
+      document.getElementById("againBtn").addEventListener("click", function () { startGame(mode); });
+      document.getElementById("modeBtn").addEventListener("click", backToStart);
+      endBtn.addEventListener("click", function () {
+        if (state === "playing" || state === "paused") finish();
+      });
       pauseBtn.addEventListener("click", function () {
         if (state === "playing") {
           state = "paused";
           cancelAnimationFrame(rafId);
-          pauseBtn.textContent = "再開する";
+          pauseBtn.textContent = "つづける";
         } else if (state === "paused") {
           state = "playing";
           lastTs = null;
-          pauseBtn.textContent = "一時停止";
+          pauseBtn.textContent = "やすむ";
           rafId = requestAnimationFrame(tick);
         }
       });
@@ -843,17 +1178,17 @@
       document.addEventListener("keydown", function (e) {
         if (e.key >= "1" && e.key <= "9") {
           var idx = parseInt(e.key, 10) - 1;
-          if (state === "playing") { swingHammerAt(holes[idx].el); whack(idx, true); }
+          if (state === "playing") { swingNetAt(holes[idx].el); catchAt(idx, true); }
         } else if (e.key === " " && state === "idle") {
-          e.preventDefault(); startGame();
+          e.preventDefault(); startGame("free");
         }
       });
       document.addEventListener("visibilitychange", function () {
         if (document.hidden && state === "playing") pauseBtn.click();
       });
 
+      renderBasket();
       updateHUD();
-      updateTime();
     })();
     </script>
   </body>

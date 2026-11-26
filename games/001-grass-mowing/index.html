@@ -82,8 +82,49 @@
   .zone-grid{display:grid;grid-template-columns:repeat(4,16px);gap:3px;flex:1;}
   .zone-grid span{width:16px;height:12px;border-radius:4px;background:var(--panel);border:2px solid var(--line);transition:background .2s ease,border-color .2s ease;}
   .zone-grid span.done{background:var(--gold);border-color:var(--gold);}
-  .zone-row .pval{font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;}
-  .mode-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .zone-row .pval{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums;min-width:64px;text-align:right;color:var(--accent-dark);}
+  .zone-row .plabel{font-size:14px;}
+  .mode-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .mode-row .btn{font-size:19px;padding:14px 30px;min-height:64px;}
+  .mode-row .btn.big{font-size:22px;padding:16px 38px;min-height:72px;}
+
+  /* スタート画面の「動きで見せる」デモ（文字に頼らない案内） */
+  .demo{
+    width:min(320px,86%);background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);
+    border-radius:16px;padding:10px 12px 8px;
+  }
+  .demo-track{position:relative;height:56px;border-radius:12px;background:#67a539;overflow:hidden;}
+  .demo-cut{position:absolute;left:0;top:0;bottom:0;width:0;background:#b9dc8f;animation:cutgrow 3.2s ease-in-out infinite;}
+  .demo-mower{position:absolute;top:50%;left:0;transform:translateY(-50%);font-size:32px;line-height:1;animation:mowmove 3.2s ease-in-out infinite;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3));}
+  .demo-hand{position:absolute;top:2px;left:14px;font-size:18px;animation:mowmove 3.2s ease-in-out infinite;}
+  @keyframes mowmove{0%{left:2px}65%{left:calc(100% - 40px)}85%{left:calc(100% - 40px)}100%{left:2px}}
+  @keyframes cutgrow{0%{width:14px}65%{width:calc(100% - 24px)}85%{width:calc(100% - 24px)}100%{width:14px}}
+  .demo-cap{margin-top:6px;font-size:14px;font-weight:900;color:#fff;}
+  @media (prefers-reduced-motion: reduce){
+    .demo-cut,.demo-mower,.demo-hand{animation:none;}
+    .demo-cut{width:55%;} .demo-mower,.demo-hand{left:55%;}
+  }
+
+  /* 区画完了の「数え上げ」ポップ（大きな数字＋星＋過程への称賛） */
+  .count-pop{
+    position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    pointer-events:none;text-align:center;z-index:5;
+  }
+  .count-pop[hidden]{display:none;}
+  .count-num{
+    font-size:clamp(64px,14vw,104px);font-weight:900;line-height:1;color:#ffd94d;
+    text-shadow:0 3px 0 #c99a12,0 6px 18px rgba(0,0,0,.35);font-variant-numeric:tabular-nums;
+  }
+  .count-num.pop{animation:countpop .28s ease;}
+  @keyframes countpop{0%{transform:scale(.4)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+  .count-stars{font-size:clamp(18px,4.4vw,26px);letter-spacing:.14em;color:#ffd94d;text-shadow:0 2px 4px rgba(0,0,0,.3);min-height:1.2em;}
+  .count-praise{
+    background:#fff;color:#2c7a1e;font-weight:900;font-size:clamp(17px,4.4vw,23px);
+    border-radius:999px;padding:7px 20px;box-shadow:0 6px 16px rgba(0,0,0,.28);
+  }
+  .count-sub{color:#fff;font-weight:900;font-size:clamp(14px,3.8vw,18px);text-shadow:0 2px 4px rgba(0,0,0,.45);}
+  @media (prefers-reduced-motion: reduce){ .count-num.pop{animation:none;} }
   .btn.white{background:#fff;color:#2c7a1e;box-shadow:0 5px 0 #cfd8c2,0 10px 18px rgba(0,0,0,.25);}
   .btn.white:active{box-shadow:0 2px 0 #cfd8c2,0 6px 12px rgba(0,0,0,.25);}
 
@@ -160,9 +201,9 @@
   <header class="top">
     <div>
       <h1><span class="leaf">🌿</span> 草刈りゲーム</h1>
-      <p class="sub">刈るたび気持ちいい、野原をぜんぶ刈り取れ！</p>
+      <p class="sub">刈るたび気持ちいい、野原をぜんぶ刈り取れ！（じかん制限なし・5歳から遊べる版）</p>
     </div>
-    <div class="badge">修行ゲーム <b>1 / 100</b> 個目</div>
+    <div class="badge">5歳でも遊べるゲーム <b>1 / 100</b> 個目</div>
   </header>
 
   <div class="hud" aria-live="off">
@@ -189,14 +230,27 @@
 
     <div class="overlay" id="startOverlay">
       <h2>🌿 草刈りゲーム</h2>
-      <p>芝刈り機を動かして、草を刈ろう。野原は12の区画に分かれていて、<br>
-      区画を刈り切るたびに「DING♪」と完了音が鳴るよ。<br>
-      お花はボーナス、岩はよけて進んでね。95%以上刈ると次のラウンドへ！</p>
-      <div class="mode-row">
-        <button class="btn" id="startBtn" type="button">⏱ 60秒チャレンジ</button>
-        <button class="btn white" id="zenBtn" type="button">🌿 のんびりモード</button>
+      <div class="demo" aria-hidden="true">
+        <div class="demo-track">
+          <div class="demo-cut"></div>
+          <div class="demo-mower">🚜</div>
+          <div class="demo-hand">👆</div>
+        </div>
+        <div class="demo-cap">ゆびで なぞると くさが 刈れるよ</div>
       </div>
-      <p style="font-size:13px;opacity:.9">のんびりモードは制限時間なし。自分のペースで刈れるよ。<br>キーボード： WASD / 矢印キー　スマホ： 画面をドラッグ</p>
+      <p>くさを ぜんぶ 刈ろう。じかん制限は ないよ。<br>お花はボーナス、岩は よけて 進んでね。</p>
+      <div class="mode-row">
+        <button class="btn big" id="zenBtn" type="button">▶ スタート</button>
+        <button class="btn white" id="startBtn" type="button">⏱ 60秒チャレンジ（大人の人向け）</button>
+      </div>
+      <p style="font-size:13px;opacity:.9">キーボード： WASD / 矢印キー　スマホ・タブレット： 画面をドラッグ</p>
+    </div>
+
+    <div class="count-pop" id="countPop" hidden aria-live="polite">
+      <div class="count-num" id="countNum">1</div>
+      <div class="count-stars" id="countStars" aria-hidden="true"></div>
+      <div class="count-praise" id="countPraise">よく刈れたね！</div>
+      <div class="count-sub" id="countSub"></div>
     </div>
 
     <div class="overlay" id="endOverlay" hidden>
@@ -216,8 +270,8 @@
   </div>
 
   <div class="controls">
-    <button class="btn green" id="mainBtn" type="button">⏱ 60秒スタート</button>
-    <button class="icon-btn" id="zenBtn2" type="button">🌿 のんびり</button>
+    <button class="btn green" id="mainBtn" type="button">▶ スタート</button>
+    <button class="icon-btn" id="zenBtn2" type="button">🌿 のんびり（最初から）</button>
     <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止">⏸ 一時停止</button>
     <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="音のオン・オフ">🔊 音 ON</button>
   </div>
@@ -231,7 +285,9 @@
       <li><span class="dot">🔔</span><span><strong>区画クリア：</strong> 野原は12区画。1区画を刈り切ると「DING♪」の完了音＋ボーナス。80%を超えると、残った草が光って教えてくれるよ。</span></li>
       <li><span class="dot">🌱</span><span><strong>抵抗と解放：</strong> 密な草の中では少し重く、刈れた場所ではスッと軽く進める。たくさん刈ると芝刈り機が育って、刈り幅と速さが上がるよ。</span></li>
       <li><span class="dot">🏁</span><span><strong>ラウンド：</strong> 野原を95%以上刈るとクリアボーナス＆次の野原へ。ラウンドが進むほど岩が増えるよ。</span></li>
-      <li><span class="dot">🌿</span><span><strong>のんびりモード：</strong> 制限時間なし。往復して刈ると地面に縞模様が残るから、きれいに刈る楽しみ方もできるよ。</span></li>
+      <li><span class="dot">🌿</span><span><strong>標準は制限時間なし：</strong> ふだんは時間に追われず、自分のペースで刈れるのが標準モード。往復して刈ると地面に縞模様が残るから、きれいに刈る楽しみ方もできるよ。60秒チャレンジは、大人が選べる任意モードとして残してあるよ。</span></li>
+      <li><span class="dot">🔢</span><span><strong>区画を数えよう：</strong> 区画を1つ刈り切るたびに、大きな数字で「1、2、3…」と数え上げるよ。その区画で刈れた草の本数も大きな数字で出るから、文字が読めなくても「数が増えた」ことが絵と数字で分かるよ。</span></li>
+      <li><span class="dot">💡</span><span><strong>ヒント：</strong> しばらく（7秒くらい）操作がないと、近くのまだ刈れていない草がやさしく光って教えてくれるよ。</span></li>
     </ul>
     <div class="legend">
       <span><i class="swatch" style="background:#4da52e"></i>草（1点）</span>
@@ -242,17 +298,29 @@
   </section>
 
   <section class="howto">
+    <h3>5歳向けの工夫（子ども向けゲーム調査の設計指針から）</h3>
+    <ul>
+      <li><span class="dot">🕊️</span><span><strong>制限時間は原則なし（指針：急かさない）：</strong> 標準モードは制限時間なしで、失敗・ゲームオーバーで何かを奪う仕組みはない。60秒モードは任意で選ぶ大人向け。</span></li>
+      <li><span class="dot">🔢</span><span><strong>数への関心につなげる（対応表の「次の一手」）：</strong> 区画完了のたびに完了した区画数を大きな数字で1つずつ数え上げ、その区画で刈った草の本数も表示する。数字は星の絵とセットで大きく出す。</span></li>
+      <li><span class="dot">👆</span><span><strong>文字に頼らない案内（指針：読めなくても分かる）：</strong> スタート画面は、芝刈り機が草を刈りながら進むアニメーションで遊び方を見せる。文章の説明は最小限にし、ボタンは大きくタップしやすくした。</span></li>
+      <li><span class="dot">💡</span><span><strong>足場かけヒント（指針：無操作時のヒント）：</strong> 7秒ほど操作がないと、近くの未刈りエリアがやさしく光る。詰まっても罰せず、次にやることをそっと示す。</span></li>
+      <li><span class="dot">🌸</span><span><strong>過程への称賛（指針：結果より過程を褒める）：</strong> 区画完了時はスコアだけでなく「よく刈れたね」「さいごまでがんばったね」の言葉と、花・星のごほうび演出で、やった過程を褒める。減点や罰はなし。</span></li>
+      <li><span class="dot">🤝</span><span><strong>保護者の方へ：</strong> 一緒に遊ぶときは、区画が終わるたびに出る大きな数字を声に出して一緒に数えてみてください。数への関心は「数字が並ぶものに触れ、声で数える」遊びで育つとされています。</span></li>
+    </ul>
+  </section>
+
+  <section class="howto">
     <h3>気持ちよさの工夫（爽快感の調査から）</h3>
     <ul>
       <li><span class="dot">⚡</span><span><strong>即時フィードバック：</strong> 刈った瞬間に音・草片・色の変化が返る。コンボが伸びるほど刈り音のピッチが音階を上る。</span></li>
       <li><span class="dot">🗺️</span><span><strong>痕跡が残る：</strong> 未刈りは濃い緑、刈り済みは明るい黄緑＋縞模様。飛んだ草片もしばらく地面に残って、通った道が地図になる。</span></li>
       <li><span class="dot">🔔</span><span><strong>小さな完了の連鎖：</strong> 全体%の表示に加えて、12区画ごとの完了を「DING♪」で確定。大きな達成を小さく区切った。</span></li>
       <li><span class="dot">🎚️</span><span><strong>盛りすぎない：</strong> 画面シェイクは使わず、止まる演出（ヒットストップ）は区画完了とお花の瞬間だけ。演出は「何が起きたか分かる」範囲に抑えた。</span></li>
-      <li><span class="dot">🕊️</span><span><strong>自分のペース：</strong> 時間制限のない「のんびりモード」を用意。時間切れでも刈った分はスコアと記録に残る。</span></li>
+      <li><span class="dot">🕊️</span><span><strong>自分のペース：</strong> 標準モードは時間制限なし。60秒モードでも、時間切れで刈った分が消えることはなく、スコアと記録に残る。</span></li>
     </ul>
   </section>
 
-  <footer>修行としてゲームを100個つくる — 1個目</footer>
+  <footer>5歳児でも遊べるゲームを100個つくる — 1個目</footer>
 </div>
 
 <script>
@@ -292,10 +360,18 @@
   var finalRank  = document.getElementById('finalRank');
   var finalDetail= document.getElementById('finalDetail');
   var finalStats = document.getElementById('finalStats');
+  var countPop = document.getElementById('countPop');
+  var countNum = document.getElementById('countNum');
+  var countStars = document.getElementById('countStars');
+  var countPraise = document.getElementById('countPraise');
+  var countSub = document.getElementById('countSub');
+  var PRAISES = ['よく刈れたね！', 'さいごまで がんばったね！', 'よく見て 刈れたね！', 'ていねいに 刈れたね！', 'じょうずに 刈れたね！'];
 
   // ---------- 状態 ----------
   var state = 'ready'; // ready | playing | paused | over
-  var mode = 'timed';  // timed | zen（のんびり）
+  var mode = 'zen';    // 標準は制限時間なし（zen）。timed は大人が選ぶ任意モード
+  var lastActive = 0;  // 最後に操作／刈れた時刻（無操作ヒント用）
+  var countTimers = []; // 数え上げ演出のタイマー
   var ZONE_COLS = 4, ZONE_ROWS = 3, ZONE_N = 12;
   var zones = [];      // {total, cut, done}
   var zonesDone = 0, totalZonesDone = 0;
@@ -623,12 +699,18 @@
       p.life -= dt;
       if(p.life <= 0){ particles.splice(i, 1); continue; }
       p.x += p.vx * dt; p.y += p.vy * dt;
-      p.vy += 260 * dt; p.vx *= 0.98;
+      p.vy += (p.shape === 'star' ? 130 : 260) * dt; p.vx *= 0.98;
       ctx.save();
       ctx.translate(p.x, p.y); ctx.rotate(p.rot + p.life * 6);
       ctx.globalAlpha = Math.min(1, p.life * 3);
       ctx.fillStyle = p.color;
-      ctx.fillRect(-4, -1.4, 8, 2.8);
+      if(p.shape === 'star'){
+        ctx.font = '900 17px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('★', 0, 0);
+      } else {
+        ctx.fillRect(-4, -1.4, 8, 2.8);
+      }
       ctx.restore();
     }
     ctx.globalAlpha = 1;
@@ -664,6 +746,34 @@
     ctx.restore();
   }
 
+  // 足場かけヒント：しばらく操作がないと、近くの未刈りエリアがやさしく光る
+  function drawIdleHint(){
+    if(state !== 'playing') return;
+    if(elapsed - lastActive < 7) return;
+    var bestC = null, bestD = Infinity;
+    for(var i = 0; i < grass.length; i++){
+      var c = grass[i];
+      if(!c.tall || c.rock) continue;
+      var cx = c.x * CELL + CELL / 2, cy = c.y * CELL + CELL / 2;
+      var dx = cx - mower.x, dy = cy - mower.y;
+      var d = dx * dx + dy * dy;
+      if(d < bestD){ bestD = d; bestC = c; }
+    }
+    if(!bestC) return;
+    var hx = bestC.x * CELL + CELL / 2, hy = bestC.y * CELL + CELL / 2;
+    var pulse = 0.5 + 0.5 * Math.sin(elapsed * 3);
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,246,170,' + (0.22 + 0.18 * pulse) + ')';
+    ctx.beginPath(); ctx.arc(hx, hy, 34 + 8 * pulse, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,220,80,' + (0.55 + 0.35 * pulse) + ')';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(hx, hy, 34 + 8 * pulse, 0, Math.PI * 2); ctx.stroke();
+    ctx.font = '900 22px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('✨', hx, hy);
+    ctx.restore();
+  }
+
   function render(dt){
     ctx.save();
     if(shake > 0){
@@ -673,6 +783,7 @@
     for(var i = 0; i < grass.length; i++) drawGrassCell(grass[i], elapsed);
     drawRocks();
     drawParticles(dt);
+    drawIdleHint();
     drawMower(elapsed);
     drawFloaters(dt);
     drawPointerGuide();
@@ -704,6 +815,53 @@
     zoneFlashes.push({ zone: z.idx, life: 1 });
     hitstop = Math.max(hitstop, 0.09); // 完了の瞬間だけの小さな止め
     dingSound();
+    // ごほうび演出：星と花びらが区画の真ん中から広がる
+    var zx = (z.idx % ZONE_COLS) * zw + zw / 2, zy = Math.floor(z.idx / ZONE_COLS) * zh + zh / 2;
+    var starColors = ['#ffd94d', '#ffb7cd', '#fff3a0', '#ff8fb2'];
+    for(var si = 0; si < 12; si++){
+      var sa = (si / 12) * Math.PI * 2;
+      particles.push({
+        x: zx, y: zy,
+        vx: Math.cos(sa) * (70 + Math.random() * 90), vy: Math.sin(sa) * (70 + Math.random() * 90) - 40,
+        rot: Math.random() * Math.PI, life: .8 + Math.random() * .5,
+        color: starColors[si % starColors.length], shape: 'star'
+      });
+    }
+    showCountPop(z);
+  }
+
+  // 区画完了の数え上げ：完了した区画数を大きな数字で1つずつ数え、
+  // その区画で刈った草の本数も大きく見せる（数への関心への接続）
+  function showCountPop(z){
+    countTimers.forEach(function(t){ clearTimeout(t); });
+    countTimers = [];
+    countPop.hidden = false;
+    countPraise.textContent = PRAISES[(zonesDone - 1) % PRAISES.length];
+    countSub.textContent = '';
+    countStars.textContent = '';
+    var target = zonesDone;
+    var n = 0;
+    function step(){
+      n++;
+      countNum.textContent = n;
+      countStars.textContent = new Array(n + 1).join('★');
+      countNum.classList.remove('pop');
+      void countNum.offsetWidth; // アニメーション再発火
+      countNum.classList.add('pop');
+      tone(620 + n * 55, .13, 'triangle', .12);
+      if(n < target){
+        countTimers.push(setTimeout(step, 330));
+      } else {
+        countSub.textContent = 'この区画で くさ ' + z.total + ' 本 刈れたよ';
+        countTimers.push(setTimeout(function(){ countPop.hidden = true; }, 1500));
+      }
+    }
+    step();
+  }
+  function hideCountPop(){
+    countTimers.forEach(function(t){ clearTimeout(t); });
+    countTimers = [];
+    countPop.hidden = true;
   }
 
   function checkLevelUp(){
@@ -720,6 +878,7 @@
 
   function cutCell(c){
     c.tall = false; c.cutAt = elapsed;
+    lastActive = elapsed;
     cutCount++; totalCutAll++;
     combo++; comboTimer = 1.4;
     if(combo > maxCombo) maxCombo = combo;
@@ -812,6 +971,7 @@
     var len = Math.hypot(vx, vy);
     mower.moving = len > 0;
     if(len > 0){
+      lastActive = elapsed;
       vx /= (len || 1); vy /= (len || 1);
       mower.angle = Math.atan2(vy, vx);
       // 抵抗→解放：密な草の中では少し重く、刈れた場所ではスッと軽い。
@@ -884,6 +1044,8 @@
     mode = newMode === 'zen' ? 'zen' : 'timed';
     score = 0; round = 1; timeLeft = GAME_TIME; elapsed = 0;
     maxCombo = 0; totalZonesDone = 0; totalCutAll = 0;
+    lastActive = 0;
+    hideCountPop();
     buildField();
     state = 'playing';
     startOverlay.hidden = true;
@@ -910,7 +1072,7 @@
     finalDetail.textContent = msg;
     finalStats.textContent = '最大コンボ ' + maxCombo + ' 連 ／ 区画クリア ' + totalZonesDone + ' 回 ／ 刈った草 ' + totalCutAll + ' マス ― 時間切れでも、刈った分はぜんぶ記録に残るよ。';
     endOverlay.hidden = false;
-    document.getElementById('mainBtn').textContent = '⏱ 60秒スタート';
+    document.getElementById('mainBtn').textContent = '▶ スタート';
     updateHud();
   }
   function togglePause(){
@@ -974,7 +1136,7 @@
   document.getElementById('retryBtn').addEventListener('click', function(){ startGame(mode); });
   document.getElementById('mainBtn').addEventListener('click', function(){
     if(state === 'paused') togglePause();
-    startGame(state === 'ready' || state === 'over' ? 'timed' : mode);
+    startGame(state === 'ready' || state === 'over' ? 'zen' : mode);
   });
   document.getElementById('pauseBtn').addEventListener('click', function(){ ensureAudio(); togglePause(); });
   document.getElementById('resumeBtn').addEventListener('click', togglePause);
