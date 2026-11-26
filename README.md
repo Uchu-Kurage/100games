@@ -11,7 +11,7 @@
 ├── games.json          # ゲームの一覧データ
 ├── games/
 │   ├── _template/      # 新しいゲームの雛形
-│   └── 001-grass-mowing/
+│   └── 001-bouzu-maker/
 │       ├── index.html
 │       ├── main.js
 │       └── README.md   # テーマ・学んだこと・反省
@@ -56,5 +56,5 @@ npx serve .
 
 | No. | タイトル | ジャンル | 日付 |
 |---|---|---|---|
-| 001 | [草刈りゲーム](games/001-grass-mowing/) | アクション | 2026-11-26 |
-| 002 | [もぐらたたき](games/002-whack-a-mole/) | 反射 | 2026-11-26 |
+| 001 | [坊主メーカー](games/001-bouzu-maker/) | アクション | 2026-11-26 |
+| 002 | [雑念たたき](games/002-zatsunen-tataki/) | 反射 | 2026-11-26 |
