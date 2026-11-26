@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>草刈りゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#e9f4dd;
+    --bg2:#dceec9;
+    --panel:#ffffff;
+    --ink:#22331a;
+    --ink-soft:#5a6e4c;
+    --accent:#3e9e2c;
+    --accent-dark:#2c7a1e;
+    --gold:#e8a812;
+    --danger:#d84a35;
+    --line:#cfe0ba;
+    --shadow:0 10px 30px rgba(46,84,28,.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101a0c;
+      --bg2:#16240f;
+      --panel:#1d2c16;
+      --ink:#eef6e2;
+      --ink-soft:#a9bd96;
+      --accent:#6cc24a;
+      --accent-dark:#8fd873;
+      --gold:#f2bc2e;
+      --danger:#ff7a63;
+      --line:#33482a;
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",system-ui,sans-serif;
+    background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button,[role="button"]{min-height:2.75rem;}
+  .wrap{max-width:880px;margin:0 auto;padding:16px 14px 40px;}
+
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:6px 2px 12px;}
+  h1{font-size:clamp(26px,5.4vw,38px);font-weight:900;margin:0;line-height:1.15;letter-spacing:.02em;}
+  h1 .leaf{color:var(--accent);}
+  .sub{margin:4px 0 0;color:var(--ink-soft);font-size:14px;font-weight:700;}
+  .badge{
+    background:var(--panel);border:2px solid var(--line);border-radius:999px;
+    padding:8px 14px;font-weight:900;font-size:13px;white-space:nowrap;
+  }
+  .badge b{color:var(--accent-dark);font-size:16px;}
+
+  /* HUD */
+  .hud{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;
+  }
+  .hud .cell{
+    background:var(--panel);border:2px solid var(--line);border-radius:14px;
+    padding:8px 10px 7px;text-align:center;box-shadow:var(--shadow);
+  }
+  .hud .label{font-size:11px;font-weight:900;color:var(--ink-soft);letter-spacing:.08em;}
+  .hud .value{font-size:clamp(20px,4.6vw,28px);font-weight:900;line-height:1.15;font-variant-numeric:tabular-nums;}
+  .hud .value.time-low{color:var(--danger);}
+  .hud .value.combo-on{color:var(--gold);}
+  .progress-row{display:flex;align-items:center;gap:10px;margin:0 2px 10px;}
+  .progress-row .plabel{font-size:12px;font-weight:900;color:var(--ink-soft);white-space:nowrap;}
+  .progress{flex:1;height:16px;background:var(--panel);border:2px solid var(--line);border-radius:999px;overflow:hidden;}
+  .progress > div{height:100%;width:0%;background:repeating-linear-gradient(45deg,var(--accent) 0 12px,#57b843 12px 24px);transition:width .18s ease;border-radius:999px;}
+  .progress-row .pval{font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;}
+  .zone-row{display:flex;align-items:center;gap:10px;margin:0 2px 12px;}
+  .zone-row .plabel{font-size:12px;font-weight:900;color:var(--ink-soft);white-space:nowrap;}
+  .zone-grid{display:grid;grid-template-columns:repeat(4,16px);gap:3px;flex:1;}
+  .zone-grid span{width:16px;height:12px;border-radius:4px;background:var(--panel);border:2px solid var(--line);transition:background .2s ease,border-color .2s ease;}
+  .zone-grid span.done{background:var(--gold);border-color:var(--gold);}
+  .zone-row .pval{font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;min-width:52px;text-align:right;}
+  .mode-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .btn.white{background:#fff;color:#2c7a1e;box-shadow:0 5px 0 #cfd8c2,0 10px 18px rgba(0,0,0,.25);}
+  .btn.white:active{box-shadow:0 2px 0 #cfd8c2,0 6px 12px rgba(0,0,0,.25);}
+
+  /* Stage */
+  .stage{
+    position:relative;background:#79b84a;border-radius:20px;overflow:hidden;
+    box-shadow:var(--shadow);border:3px solid #5da137;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  canvas{display:block;width:100%;height:auto;}
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:20px;background:rgba(20,38,12,.55);backdrop-filter:blur(2px);
+    color:#fff;gap:10px;overflow-y:auto;
+  }
+  @media (max-width:560px){
+    .overlay{padding:10px 12px;gap:6px;justify-content:flex-start;}
+    .overlay h2{font-size:22px;}
+    .overlay p{font-size:12.5px;line-height:1.55;}
+    .overlay .btn{font-size:15px;padding:9px 24px;min-height:44px;}
+    .overlay .big-score{font-size:32px;}
+  }
+  .overlay[hidden]{display:none;}
+  .overlay h2{margin:0;font-size:clamp(26px,6vw,40px);font-weight:900;text-shadow:0 2px 0 rgba(0,0,0,.25);}
+  .overlay p{margin:0;font-size:15px;font-weight:700;line-height:1.7;max-width:30em;}
+  .overlay .big-score{font-size:clamp(34px,8vw,52px);font-weight:900;color:#ffd94d;line-height:1;font-variant-numeric:tabular-nums;}
+  .overlay .rank{font-size:17px;font-weight:900;background:#fff;color:#2c7a1e;border-radius:999px;padding:6px 18px;}
+  .btn{
+    font-family:inherit;font-weight:900;font-size:17px;cursor:pointer;
+    border:none;border-radius:999px;padding:12px 30px;min-height:52px;
+    background:#ffd94d;color:#4a3200;box-shadow:0 5px 0 #c99a12,0 10px 18px rgba(0,0,0,.25);
+    transition:transform .06s ease, box-shadow .06s ease;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c99a12,0 6px 12px rgba(0,0,0,.25);}
+  .btn.green{background:var(--accent);color:#fff;box-shadow:0 5px 0 var(--accent-dark),0 10px 18px rgba(0,0,0,.18);}
+  .btn.green:active{box-shadow:0 2px 0 var(--accent-dark),0 6px 12px rgba(0,0,0,.18);}
+
+  /* Controls bar */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:stretch;}
+  .controls .btn{flex:1 1 auto;font-size:15px;padding:10px 18px;min-height:48px;}
+  .icon-btn{
+    font-family:inherit;font-weight:900;font-size:14px;cursor:pointer;
+    background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:999px;
+    padding:10px 16px;min-height:48px;min-width:48px;
+  }
+  .icon-btn[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent-dark);}
+
+  /* How to */
+  .howto{
+    margin-top:18px;background:var(--panel);border:2px solid var(--line);border-radius:16px;
+    padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .howto h3{margin:0 0 10px;font-size:16px;font-weight:900;}
+  .howto ul{margin:0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px;font-weight:500;line-height:1.6;}
+  .howto li{display:flex;gap:10px;align-items:flex-start;}
+  .howto .dot{flex:0 0 auto;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font-size:14px;background:var(--bg2);border:1.5px solid var(--line);}
+  kbd{
+    font-family:inherit;font-weight:900;background:var(--bg2);border:1.5px solid var(--line);
+    border-bottom-width:3px;border-radius:6px;padding:1px 7px;font-size:12px;white-space:nowrap;
+  }
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:13px;font-weight:700;color:var(--ink-soft);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:16px;height:16px;border-radius:5px;display:inline-block;border:1.5px solid rgba(0,0,0,.15);}
+  footer{margin-top:18px;text-align:center;color:var(--ink-soft);font-size:12px;font-weight:700;}
+  @media (max-width:520px){
+    .hud{grid-template-columns:repeat(2,1fr);}
+    .controls .btn{flex:1 1 100%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1><span class="leaf">🌿</span> 草刈りゲーム</h1>
+      <p class="sub">刈るたび気持ちいい、野原をぜんぶ刈り取れ！</p>
+    </div>
+    <div class="badge">修行ゲーム <b>1 / 100</b> 個目</div>
+  </header>
+
+  <div class="hud" aria-live="off">
+    <div class="cell"><div class="label">スコア</div><div class="value" id="hudScore">0</div></div>
+    <div class="cell"><div class="label">のこり時間</div><div class="value" id="hudTime">60</div></div>
+    <div class="cell"><div class="label">コンボ</div><div class="value" id="hudCombo">×1.0</div></div>
+    <div class="cell"><div class="label">ラウンド</div><div class="value" id="hudRound">1</div></div>
+  </div>
+
+  <div class="progress-row">
+    <span class="plabel">刈り進み具合</span>
+    <div class="progress"><div id="progressBar"></div></div>
+    <span class="pval" id="progressVal">0%</span>
+  </div>
+
+  <div class="zone-row">
+    <span class="plabel">区画クリア</span>
+    <div class="zone-grid" id="zoneGrid" aria-hidden="true"></div>
+    <span class="pval" id="zoneVal">0 / 12</span>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game" width="900" height="600" aria-label="草刈りゲームの画面"></canvas>
+
+    <div class="overlay" id="startOverlay">
+      <h2>🌿 草刈りゲーム</h2>
+      <p>芝刈り機を動かして、草を刈ろう。野原は12の区画に分かれていて、<br>
+      区画を刈り切るたびに「DING♪」と完了音が鳴るよ。<br>
+      お花はボーナス、岩はよけて進んでね。95%以上刈ると次のラウンドへ！</p>
+      <div class="mode-row">
+        <button class="btn" id="startBtn" type="button">⏱ 60秒チャレンジ</button>
+        <button class="btn white" id="zenBtn" type="button">🌿 のんびりモード</button>
+      </div>
+      <p style="font-size:13px;opacity:.9">のんびりモードは制限時間なし。自分のペースで刈れるよ。<br>キーボード： WASD / 矢印キー　スマホ： 画面をドラッグ</p>
+    </div>
+
+    <div class="overlay" id="endOverlay" hidden>
+      <h2>⏰ タイムアップ！</h2>
+      <div class="big-score" id="finalScore">0</div>
+      <div class="rank" id="finalRank">—</div>
+      <p id="finalDetail">—</p>
+      <p id="finalStats" style="font-size:13px;opacity:.92">—</p>
+      <button class="btn" id="retryBtn" type="button">🔁 もう一度刈る</button>
+    </div>
+
+    <div class="overlay" id="pauseOverlay" hidden>
+      <h2>⏸ 休憩中</h2>
+      <p>草は待ってくれているよ。</p>
+      <button class="btn" id="resumeBtn" type="button">▶ つづける</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn green" id="mainBtn" type="button">⏱ 60秒スタート</button>
+    <button class="icon-btn" id="zenBtn2" type="button">🌿 のんびり</button>
+    <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止">⏸ 一時停止</button>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="音のオン・オフ">🔊 音 ON</button>
+  </div>
+
+  <section class="howto">
+    <h3>あそびかた</h3>
+    <ul>
+      <li><span class="dot">🖱️</span><span><strong>パソコン：</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> または <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> で移動。<kbd>Space</kbd> で一時停止。</span></li>
+      <li><span class="dot">👆</span><span><strong>スマホ・タブレット：</strong> 野原を指でドラッグすると、その方向に芝刈り機が進むよ。</span></li>
+      <li><span class="dot">🔥</span><span><strong>コンボ：</strong> 休まず刈り続けるとコンボ倍率が上がって、スコアがどんどん伸びる。刈り音のピッチも少しずつ上がっていくよ。切れても罰はないから、自分のペースでOK。</span></li>
+      <li><span class="dot">🔔</span><span><strong>区画クリア：</strong> 野原は12区画。1区画を刈り切ると「DING♪」の完了音＋ボーナス。80%を超えると、残った草が光って教えてくれるよ。</span></li>
+      <li><span class="dot">🌱</span><span><strong>抵抗と解放：</strong> 密な草の中では少し重く、刈れた場所ではスッと軽く進める。たくさん刈ると芝刈り機が育って、刈り幅と速さが上がるよ。</span></li>
+      <li><span class="dot">🏁</span><span><strong>ラウンド：</strong> 野原を95%以上刈るとクリアボーナス＆次の野原へ。ラウンドが進むほど岩が増えるよ。</span></li>
+      <li><span class="dot">🌿</span><span><strong>のんびりモード：</strong> 制限時間なし。往復して刈ると地面に縞模様が残るから、きれいに刈る楽しみ方もできるよ。</span></li>
+    </ul>
+    <div class="legend">
+      <span><i class="swatch" style="background:#4da52e"></i>草（1点）</span>
+      <span><i class="swatch" style="background:#ffd94d"></i>金の草（20点）</span>
+      <span><i class="swatch" style="background:#ff8fb2"></i>お花（30点）</span>
+      <span><i class="swatch" style="background:#8d8d84"></i>岩（通れない）</span>
+    </div>
+  </section>
+
+  <section class="howto">
+    <h3>気持ちよさの工夫（爽快感の調査から）</h3>
+    <ul>
+      <li><span class="dot">⚡</span><span><strong>即時フィードバック：</strong> 刈った瞬間に音・草片・色の変化が返る。コンボが伸びるほど刈り音のピッチが音階を上る。</span></li>
+      <li><span class="dot">🗺️</span><span><strong>痕跡が残る：</strong> 未刈りは濃い緑、刈り済みは明るい黄緑＋縞模様。飛んだ草片もしばらく地面に残って、通った道が地図になる。</span></li>
+      <li><span class="dot">🔔</span><span><strong>小さな完了の連鎖：</strong> 全体%の表示に加えて、12区画ごとの完了を「DING♪」で確定。大きな達成を小さく区切った。</span></li>
+      <li><span class="dot">🎚️</span><span><strong>盛りすぎない：</strong> 画面シェイクは使わず、止まる演出（ヒットストップ）は区画完了とお花の瞬間だけ。演出は「何が起きたか分かる」範囲に抑えた。</span></li>
+      <li><span class="dot">🕊️</span><span><strong>自分のペース：</strong> 時間制限のない「のんびりモード」を用意。時間切れでも刈った分はスコアと記録に残る。</span></li>
+    </ul>
+  </section>
+
+  <footer>修行としてゲームを100個つくる — 1個目</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- 基本設定 ----------
+  var W = 900, H = 600;          // 論理サイズ
+  var CELL = 30;                 // 草マスの大きさ
+  var COLS = W / CELL, ROWS = H / CELL;
+  var GAME_TIME = 60;            // 秒
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var stage = document.getElementById('stage');
+
+  var hudScore = document.getElementById('hudScore');
+  var hudTime  = document.getElementById('hudTime');
+  var hudCombo = document.getElementById('hudCombo');
+  var hudRound = document.getElementById('hudRound');
+  var progressBar = document.getElementById('progressBar');
+  var progressVal = document.getElementById('progressVal');
+  var zoneGrid = document.getElementById('zoneGrid');
+  var zoneVal  = document.getElementById('zoneVal');
+  var hudTimeLabel = document.querySelectorAll('.hud .cell')[1].querySelector('.label');
+  var zoneCells = [];
+  for(var zi = 0; zi < 12; zi++){
+    var zs = document.createElement('span');
+    zoneGrid.appendChild(zs);
+    zoneCells.push(zs);
+  }
+
+  var startOverlay = document.getElementById('startOverlay');
+  var endOverlay   = document.getElementById('endOverlay');
+  var pauseOverlay = document.getElementById('pauseOverlay');
+  var finalScore = document.getElementById('finalScore');
+  var finalRank  = document.getElementById('finalRank');
+  var finalDetail= document.getElementById('finalDetail');
+  var finalStats = document.getElementById('finalStats');
+
+  // ---------- 状態 ----------
+  var state = 'ready'; // ready | playing | paused | over
+  var mode = 'timed';  // timed | zen（のんびり）
+  var ZONE_COLS = 4, ZONE_ROWS = 3, ZONE_N = 12;
+  var zones = [];      // {total, cut, done}
+  var zonesDone = 0, totalZonesDone = 0;
+  var zoneFlashes = []; // {zone, life}
+  var clippings = [];   // 地面に残る刈り草（痕跡）
+  var hitstop = 0;      // 完了の瞬間だけの小さな止め
+  var maxCombo = 0;
+  var totalCutAll = 0;
+  var mowerLevel = 1;
+  var grass = [];      // {h:0..1 tall, type:0通常 1金 2花, phase, shade, rock}
+  var rocks = [];
+  var particles = [];
+  var floaters = [];   // スコア表示
+  var mower = { x: W/2, y: H/2, r: 30, angle: -Math.PI/2, speed: 300, moving:false };
+  var score = 0, best = 0;
+  var round = 1;
+  var timeLeft = GAME_TIME;
+  var cutCount = 0, totalCuttable = 0, flowerCount = 0;
+  var combo = 0, comboTimer = 0;
+  var elapsed = 0;
+  var lastTs = 0;
+  var shake = 0;
+  var keys = {};
+  var pointer = { active:false, x:0, y:0 };
+  var soundOn = true;
+  var rafId = null;
+
+  // ---------- 音（WebAudio 合成） ----------
+  var audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+    }
+    if(audioCtx && audioCtx.state === 'suspended'){ audioCtx.resume(); }
+  }
+  function tone(freq, dur, type, vol, when){
+    if(!soundOn || !audioCtx) return;
+    var t = audioCtx.currentTime + (when || 0);
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol || 0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  var snipCooldown = 0;
+  function snipSound(){
+    if(!soundOn || !audioCtx || snipCooldown > 0) return;
+    snipCooldown = 0.05;
+    var dur = 0.06, sr = audioCtx.sampleRate;
+    var buf = audioCtx.createBuffer(1, sr * dur, sr);
+    var d = buf.getChannelData(0);
+    for(var i=0;i<d.length;i++){ d[i] = (Math.random()*2-1) * (1 - i/d.length); }
+    var src = audioCtx.createBufferSource(); src.buffer = buf;
+    var f = audioCtx.createBiquadFilter(); f.type='highpass';
+    // コンボが伸びるほど少しずつ高く（ピッチのランダム＋上昇で連打に耐える）
+    f.frequency.value = 1700 + Math.random()*500 + Math.min(combo, 120) * 6;
+    var g = audioCtx.createGain(); g.gain.value = 0.16;
+    src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+    src.start();
+  }
+  // コンボの節目で音階（ペンタトニック）を1つ上る小さな音
+  var SCALE = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51];
+  function comboNote(){
+    var idx = Math.min(Math.floor(combo / 15), SCALE.length - 1);
+    tone(SCALE[idx], .14, 'triangle', .10);
+  }
+  function chime(){ tone(880, .12, 'sine', .14); tone(1318, .2, 'sine', .12, .07); }
+  function goldSound(){ tone(1174, .1, 'triangle', .14); tone(1568, .18, 'triangle', .12, .06); }
+  // 区画完了の確定音（DING型）― 完了の瞬間にだけ鳴らして価値を守る
+  function dingSound(){ tone(1567.98, .16, 'sine', .16); tone(2093, .34, 'sine', .12, .07); }
+  function levelUpSound(){ [659, 784, 1046].forEach(function(f,i){ tone(f,.14,'triangle',.13,i*.07); }); }
+  function roundClearSound(){ [523,659,784,1046].forEach(function(f,i){ tone(f,.16,'triangle',.14,i*.09); }); }
+  function endSound(){ [784,659,523,392].forEach(function(f,i){ tone(f,.22,'triangle',.13,i*.13); }); }
+
+  // ---------- 野原の生成 ----------
+  function buildField(){
+    grass = []; rocks = []; particles = []; floaters = [];
+    clippings = []; zoneFlashes = []; hitstop = 0;
+    zones = [];
+    for(var zz = 0; zz < ZONE_N; zz++) zones.push({ idx: zz, total: 0, cut: 0, done: false });
+    zonesDone = 0;
+    mowerLevel = 1; mower.r = 30; mower.speed = 300;
+    cutCount = 0; flowerCount = 0;
+    var rockCount = Math.min(3 + (round - 1) * 2, 14);
+    var rockCells = {};
+    var tries = 0;
+    while(rocks.length < rockCount && tries < 300){
+      tries++;
+      var cx = 1 + Math.floor(Math.random() * (COLS - 2));
+      var cy = 1 + Math.floor(Math.random() * (ROWS - 2));
+      var key = cx + ',' + cy;
+      // スタート位置（中央）付近には置かない
+      if(Math.abs(cx*CELL + CELL/2 - W/2) < 90 && Math.abs(cy*CELL + CELL/2 - H/2) < 90) continue;
+      if(rockCells[key]) continue;
+      rockCells[key] = true;
+      rocks.push({ x: cx*CELL + CELL/2, y: cy*CELL + CELL/2, r: 17 + Math.random()*6, rot: Math.random()*Math.PI });
+    }
+    totalCuttable = 0;
+    for(var y=0; y<ROWS; y++){
+      for(var x=0; x<COLS; x++){
+        var k = x + ',' + y;
+        var isRock = !!rockCells[k];
+        var type = 0;
+        var r = Math.random();
+        if(!isRock){
+          if(r < 0.022) type = 1;        // 金の草
+          else if(r < 0.075) type = 2;   // お花
+          totalCuttable++;
+        }
+        var zx = Math.min(ZONE_COLS - 1, Math.floor(x / COLS * ZONE_COLS));
+        var zy = Math.min(ZONE_ROWS - 1, Math.floor(y / ROWS * ZONE_ROWS));
+        var zoneIdx = zy * ZONE_COLS + zx;
+        if(!isRock) zones[zoneIdx].total++;
+        grass.push({
+          x: x, y: y, tall: !isRock, rock: isRock, type: type, zone: zoneIdx,
+          phase: Math.random() * Math.PI * 2,
+          shade: Math.random(),
+          cutAt: -9
+        });
+      }
+    }
+    mower.x = W/2; mower.y = H/2; mower.angle = -Math.PI/2;
+    combo = 0; comboTimer = 0;
+  }
+
+  function cellAt(px, py){
+    var cx = Math.floor(px / CELL), cy = Math.floor(py / CELL);
+    if(cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS) return null;
+    return grass[cy * COLS + cx];
+  }
+
+  // ---------- 描画 ----------
+  function fitCanvas(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', fitCanvas);
+  fitCanvas();
+
+  function drawGround(){
+    // 痕跡のコントラスト最大化：未刈り=濃い緑／刈り済み=明るい黄緑（縞模様つき）
+    ctx.fillStyle = '#b9dc8f';
+    ctx.fillRect(0, 0, W, H);
+    for(var i = 0; i < grass.length; i++){
+      var c = grass[i];
+      var px = c.x * CELL, py = c.y * CELL;
+      if(c.tall || c.rock){
+        ctx.fillStyle = (c.x + c.y) % 2 === 0 ? '#6fae3e' : '#67a539';
+        ctx.fillRect(px, py, CELL, CELL);
+      } else {
+        // 往復の縞模様：2行ごとに明度を変える
+        var band = Math.floor(c.y / 2) % 2;
+        ctx.fillStyle = band === 0 ? '#b9dc8f' : '#a9d17c';
+        ctx.fillRect(px, py, CELL, CELL);
+        // 刈った直後だけ境界が光る（線を引く快感）
+        var fresh = elapsed - c.cutAt;
+        if(fresh >= 0 && fresh < 0.35){
+          ctx.strokeStyle = 'rgba(255,255,205,' + (0.85 * (1 - fresh / 0.35)) + ')';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(px + 1, py + 1, CELL - 2, CELL - 2);
+        }
+      }
+    }
+    // 区画完了フラッシュ
+    for(var f = zoneFlashes.length - 1; f >= 0; f--){
+      var zf = zoneFlashes[f];
+      zf.life -= 0.016;
+      if(zf.life <= 0){ zoneFlashes.splice(f, 1); continue; }
+      var zw = W / ZONE_COLS, zh = H / ZONE_ROWS;
+      ctx.fillStyle = 'rgba(255,240,160,' + (0.35 * zf.life) + ')';
+      ctx.fillRect((zf.zone % ZONE_COLS) * zw, Math.floor(zf.zone / ZONE_COLS) * zh, zw, zh);
+    }
+    // 地面に残る刈り草（permanence：通った道の地図になる）
+    for(var k = clippings.length - 1; k >= 0; k--){
+      var cl = clippings[k];
+      cl.life -= 0.016;
+      if(cl.life <= 0){ clippings.splice(k, 1); continue; }
+      ctx.save();
+      ctx.translate(cl.x, cl.y); ctx.rotate(cl.rot);
+      ctx.globalAlpha = Math.min(0.8, cl.life);
+      ctx.fillStyle = cl.color;
+      ctx.fillRect(-4, -1.3, 8, 2.6);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawGrassCell(c, t){
+    var px = c.x * CELL, py = c.y * CELL;
+    if(c.rock) return;
+    if(!c.tall){
+      // 刈りたて：短い切り株
+      ctx.strokeStyle = 'rgba(90,140,50,0.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for(var s=0; s<3; s++){
+        var bx = px + 6 + s*9;
+        ctx.moveTo(bx, py + CELL - 3);
+        ctx.lineTo(bx + 1.5, py + CELL - 9);
+      }
+      ctx.stroke();
+      return;
+    }
+    // 終盤は残った草が光って教えてくれる（取り残し探しの支援）
+    if(totalCuttable > 0 && cutCount / totalCuttable >= 0.8){
+      ctx.strokeStyle = 'rgba(255,240,150,' + (0.45 + 0.4 * Math.sin(t * 5 + c.phase)) + ')';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(px + 2, py + 2, CELL - 4, CELL - 4);
+    }
+    var sway = Math.sin(t * 1.6 + c.phase) * 2.2;
+    var base = c.type === 1 ? '#d9a514' : (c.shade < .33 ? '#2f7d1c' : (c.shade < .66 ? '#3f9423' : '#4da52e'));
+    ctx.strokeStyle = base;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for(var i=0; i<4; i++){
+      var gx = px + 5 + i * 7 + (c.shade * 3);
+      var hgt = 15 + ((i * 7 + c.phase * 10) % 9);
+      ctx.moveTo(gx, py + CELL - 1);
+      ctx.quadraticCurveTo(gx + sway * .5, py + CELL - hgt * .6, gx + sway + (i - 1.5) * 1.6, py + CELL - hgt);
+    }
+    ctx.stroke();
+    if(c.type === 1){
+      // 金の草のきらめき
+      ctx.fillStyle = 'rgba(255,230,120,' + (0.55 + 0.4 * Math.sin(t * 4 + c.phase)) + ')';
+      ctx.beginPath();
+      ctx.arc(px + CELL/2, py + 8, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if(c.type === 2){
+      // お花
+      var fx = px + CELL/2, fy = py + 10;
+      ctx.fillStyle = '#ff8fb2';
+      for(var p=0; p<5; p++){
+        var a = (p / 5) * Math.PI * 2 + c.phase;
+        ctx.beginPath();
+        ctx.arc(fx + Math.cos(a) * 4.4, fy + Math.sin(a) * 4.4, 3.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#ffd94d';
+      ctx.beginPath(); ctx.arc(fx, fy, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawRocks(){
+    rocks.forEach(function(r){
+      ctx.save();
+      ctx.translate(r.x, r.y); ctx.rotate(r.rot);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.ellipse(2, 5, r.r, r.r * .8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#8d8d84';
+      ctx.beginPath();
+      ctx.moveTo(-r.r, r.r * .55);
+      ctx.lineTo(-r.r * .5, -r.r * .6);
+      ctx.lineTo(r.r * .3, -r.r * .85);
+      ctx.lineTo(r.r, -r.r * .1);
+      ctx.lineTo(r.r * .75, r.r * .6);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.moveTo(-r.r * .5, -r.r * .6);
+      ctx.lineTo(r.r * .3, -r.r * .85);
+      ctx.lineTo(r.r * .55, -r.r * .25);
+      ctx.lineTo(-r.r * .15, -r.r * .05);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawMower(t){
+    ctx.save();
+    ctx.translate(mower.x, mower.y);
+    // 影
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath(); ctx.ellipse(3, 8, 30, 20, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.rotate(mower.angle + Math.PI / 2);
+    // ハンドル
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-11, 22); ctx.lineTo(-17, 40); ctx.moveTo(11, 22); ctx.lineTo(17, 40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-17, 40); ctx.lineTo(17, 40); ctx.stroke();
+    // 車輪
+    ctx.fillStyle = '#2b2b2b';
+    [[-19,-12],[19,-12],[-19,16],[19,16]].forEach(function(w){
+      ctx.beginPath(); ctx.arc(w[0], w[1], 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#9a9a92'; ctx.beginPath(); ctx.arc(w[0], w[1], 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2b2b2b';
+    });
+    // 本体
+    var bob = mower.moving ? Math.sin(t * 26) * 1.2 : 0;
+    ctx.fillStyle = '#d84a35';
+    roundRect(-19, -24 + bob, 38, 46, 10); ctx.fill();
+    ctx.fillStyle = '#b93727';
+    roundRect(-19, 8 + bob, 38, 14, 7); ctx.fill();
+    // エンジン
+    ctx.fillStyle = '#f2f0e6';
+    ctx.beginPath(); ctx.arc(0, -4 + bob, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath(); ctx.arc(0, -4 + bob, 4.5, 0, Math.PI * 2); ctx.fill();
+    // 回転刃（前の半透明円）
+    ctx.fillStyle = 'rgba(255,255,255,0.20)';
+    ctx.beginPath(); ctx.arc(0, -26, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 2;
+    var ba = t * 30;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(ba) * -13, -26 + Math.sin(ba) * -13 * 0.4);
+    ctx.lineTo(Math.cos(ba) * 13, -26 + Math.sin(ba) * 13 * 0.4);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawParticles(dt){
+    for(var i = particles.length - 1; i >= 0; i--){
+      var p = particles[i];
+      p.life -= dt;
+      if(p.life <= 0){ particles.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vy += 260 * dt; p.vx *= 0.98;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot + p.life * 6);
+      ctx.globalAlpha = Math.min(1, p.life * 3);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-4, -1.4, 8, 2.8);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawFloaters(dt){
+    ctx.textAlign = 'center';
+    for(var i = floaters.length - 1; i >= 0; i--){
+      var f = floaters[i];
+      f.life -= dt; f.y -= 34 * dt;
+      if(f.life <= 0){ floaters.splice(i, 1); continue; }
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, f.life * 2.4);
+      ctx.font = '900 ' + f.size + 'px "Zen Maru Gothic", sans-serif';
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,50,15,0.75)';
+      ctx.strokeText(f.text, f.x, f.y);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, f.y);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawPointerGuide(){
+    if(!pointer.active || state !== 'playing') return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+    ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.moveTo(mower.x, mower.y); ctx.lineTo(pointer.x, pointer.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath(); ctx.arc(pointer.x, pointer.y, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function render(dt){
+    ctx.save();
+    if(shake > 0){
+      ctx.translate((Math.random() - .5) * shake * 8, (Math.random() - .5) * shake * 8);
+    }
+    drawGround();
+    for(var i = 0; i < grass.length; i++) drawGrassCell(grass[i], elapsed);
+    drawRocks();
+    drawParticles(dt);
+    drawMower(elapsed);
+    drawFloaters(dt);
+    drawPointerGuide();
+    ctx.restore();
+
+    // 残り時間わずかで赤い縁（チャレンジモードのみ）
+    if(state === 'playing' && mode === 'timed' && timeLeft <= 10){
+      ctx.strokeStyle = 'rgba(216,74,53,' + (0.35 + 0.3 * Math.sin(elapsed * 6)) + ')';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(0, 0, W, H);
+    }
+  }
+
+  // ---------- ゲームロジック ----------
+  function comboMultiplier(){
+    return Math.min(1 + Math.floor(combo / 15) * 0.5, 4);
+  }
+
+  function zoneComplete(z){
+    z.done = true;
+    zonesDone++; totalZonesDone++;
+    var bonus = 50 + round * 10;
+    score += bonus;
+    var zw = W / ZONE_COLS, zh = H / ZONE_ROWS;
+    floaters.push({
+      x: (z.idx % ZONE_COLS) * zw + zw / 2, y: Math.floor(z.idx / ZONE_COLS) * zh + zh / 2,
+      text: '区画クリア！ +' + bonus, color: '#fff3a0', size: 24, life: 1.2
+    });
+    zoneFlashes.push({ zone: z.idx, life: 1 });
+    hitstop = Math.max(hitstop, 0.09); // 完了の瞬間だけの小さな止め
+    dingSound();
+  }
+
+  function checkLevelUp(){
+    var lvl = cutCount >= 380 ? 3 : (cutCount >= 160 ? 2 : 1);
+    if(lvl > mowerLevel){
+      mowerLevel = lvl;
+      mower.r = 30 + (lvl - 1) * 4;
+      mower.speed = 300 + (lvl - 1) * 18;
+      floaters.push({ x: mower.x, y: mower.y - 44, text: '刈り幅アップ！ Lv' + lvl, color: '#ffd94d', size: 22, life: 1.1 });
+      hitstop = Math.max(hitstop, 0.05);
+      levelUpSound();
+    }
+  }
+
+  function cutCell(c){
+    c.tall = false; c.cutAt = elapsed;
+    cutCount++; totalCutAll++;
+    combo++; comboTimer = 1.4;
+    if(combo > maxCombo) maxCombo = combo;
+    if(combo > 0 && combo % 15 === 0) comboNote();
+    var basePts = c.type === 1 ? 20 : (c.type === 2 ? 30 : 1);
+    var pts = Math.round(basePts * comboMultiplier());
+    score += pts;
+    var cx = c.x * CELL + CELL/2, cy = c.y * CELL + CELL/2;
+    // 刈りカスのパーティクル
+    var colors = c.type === 1 ? ['#ffd94d','#e8a812','#fff0a0'] : ['#3f9423','#5cb83a','#7ed957'];
+    for(var i = 0; i < 5; i++){
+      particles.push({
+        x: cx, y: cy,
+        vx: (Math.random() - .5) * 190, vy: -60 - Math.random() * 130,
+        rot: Math.random() * Math.PI, life: .45 + Math.random() * .35,
+        color: colors[i % colors.length]
+      });
+    }
+    // 地面に残る刈り草（痕跡）― 数秒残って通った道になる
+    for(var j = 0; j < 2; j++){
+      clippings.push({
+        x: cx + (Math.random() - .5) * 20, y: cy + (Math.random() - .5) * 16,
+        rot: Math.random() * Math.PI, life: 3.5 + Math.random() * 1.5,
+        color: colors[j % colors.length]
+      });
+    }
+    if(clippings.length > 420) clippings.splice(0, clippings.length - 420);
+    if(c.type === 2){
+      flowerCount++;
+      floaters.push({ x: cx, y: cy - 8, text: '+' + pts + ' 🌸', color: '#ffb7cd', size: 19, life: .9 });
+      hitstop = Math.max(hitstop, 0.04);
+      chime();
+    } else if(c.type === 1){
+      floaters.push({ x: cx, y: cy - 8, text: '+' + pts, color: '#ffd94d', size: 20, life: .9 });
+      goldSound();
+    }
+    snipSound();
+    // 区画の完了判定（小さな完了の連鎖）
+    var z = zones[c.zone];
+    if(z && !z.done){
+      z.cut++;
+      if(z.total > 0 && z.cut >= z.total) zoneComplete(z);
+    }
+    checkLevelUp();
+  }
+
+  function tryCut(){
+    var checkR = mower.r + 4;
+    var minCx = Math.max(0, Math.floor((mower.x - checkR) / CELL));
+    var maxCx = Math.min(COLS - 1, Math.floor((mower.x + checkR) / CELL));
+    var minCy = Math.max(0, Math.floor((mower.y - checkR) / CELL));
+    var maxCy = Math.min(ROWS - 1, Math.floor((mower.y + checkR) / CELL));
+    for(var cy = minCy; cy <= maxCy; cy++){
+      for(var cx = minCx; cx <= maxCx; cx++){
+        var c = grass[cy * COLS + cx];
+        if(!c.tall || c.rock) continue;
+        var dx = (cx * CELL + CELL/2) - mower.x, dy = (cy * CELL + CELL/2) - mower.y;
+        if(dx*dx + dy*dy <= checkR * checkR) cutCell(c);
+      }
+    }
+  }
+
+  function update(dt){
+    elapsed += dt;
+    if(snipCooldown > 0) snipCooldown -= dt;
+    if(shake > 0) shake = Math.max(0, shake - dt * 3);
+
+    if(state !== 'playing') return;
+
+    if(mode === 'timed'){
+      timeLeft -= dt;
+      if(timeLeft <= 0){ timeLeft = 0; gameOver(); return; }
+    }
+
+    // コンボ減衰
+    if(comboTimer > 0){ comboTimer -= dt; if(comboTimer <= 0) combo = 0; }
+
+    // 入力ベクトル
+    var vx = 0, vy = 0;
+    if(keys['arrowup'] || keys['w']) vy -= 1;
+    if(keys['arrowdown'] || keys['s']) vy += 1;
+    if(keys['arrowleft'] || keys['a']) vx -= 1;
+    if(keys['arrowright'] || keys['d']) vx += 1;
+    if(pointer.active){
+      var pdx = pointer.x - mower.x, pdy = pointer.y - mower.y;
+      var dist = Math.hypot(pdx, pdy);
+      if(dist > 14){ vx = pdx / dist; vy = pdy / dist; }
+      else { vx = 0; vy = 0; }
+    }
+    var len = Math.hypot(vx, vy);
+    mower.moving = len > 0;
+    if(len > 0){
+      vx /= (len || 1); vy /= (len || 1);
+      mower.angle = Math.atan2(vy, vx);
+      // 抵抗→解放：密な草の中では少し重く、刈れた場所ではスッと軽い。
+      // コンボが伸びると少し速くなる（罰ではなくご褒美として）
+      var under = cellAt(mower.x, mower.y);
+      var resist = (under && under.tall) ? 0.84 : 1;
+      var speedNow = mower.speed * resist * (1 + (comboMultiplier() - 1) * 0.04);
+      var nx = mower.x + vx * speedNow * dt;
+      var ny = mower.y + vy * speedNow * dt;
+      // 岩との当たり判定（軸ごとに試す）
+      if(!hitsRock(nx, mower.y)) mower.x = nx;
+      if(!hitsRock(mower.x, ny)) mower.y = ny;
+      mower.x = Math.max(mower.r, Math.min(W - mower.r, mower.x));
+      mower.y = Math.max(mower.r, Math.min(H - mower.r, mower.y));
+      tryCut();
+    }
+
+    // ラウンドクリア判定
+    if(totalCuttable > 0 && cutCount / totalCuttable >= 0.95){
+      var bonus = 300 + round * 100;
+      score += bonus;
+      floaters.push({ x: W/2, y: H/2 - 60, text: 'ラウンドクリア！ +' + bonus, color: '#ffd94d', size: 34, life: 1.6 });
+      round++;
+      hitstop = Math.max(hitstop, 0.12);
+      shake = 0.25;
+      roundClearSound();
+      buildField();
+    }
+
+    updateHud();
+  }
+
+  function hitsRock(px, py){
+    for(var i = 0; i < rocks.length; i++){
+      var r = rocks[i];
+      var dx = px - r.x, dy = py - r.y;
+      var rr = r.r + mower.r * 0.62;
+      if(dx*dx + dy*dy < rr * rr) return true;
+    }
+    return false;
+  }
+
+  function updateHud(){
+    hudScore.textContent = score.toLocaleString('ja-JP');
+    if(mode === 'zen'){
+      hudTime.textContent = '∞';
+      hudTimeLabel.textContent = 'のんびり';
+      hudTime.classList.remove('time-low');
+    } else {
+      hudTime.textContent = Math.ceil(timeLeft);
+      hudTimeLabel.textContent = 'のこり時間';
+      hudTime.classList.toggle('time-low', state === 'playing' && timeLeft <= 10);
+    }
+    zoneVal.textContent = zonesDone + ' / ' + ZONE_N;
+    for(var i = 0; i < ZONE_N; i++){
+      if(zones[i]) zoneCells[i].classList.toggle('done', !!zones[i].done);
+    }
+    var m = comboMultiplier();
+    hudCombo.textContent = '×' + m.toFixed(1) + (combo > 0 ? '（' + combo + '）' : '');
+    hudCombo.classList.toggle('combo-on', m > 1);
+    hudRound.textContent = round;
+    var pct = totalCuttable ? Math.floor(cutCount / totalCuttable * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressVal.textContent = pct + '%';
+  }
+
+  // ---------- 進行 ----------
+  function startGame(newMode){
+    ensureAudio();
+    mode = newMode === 'zen' ? 'zen' : 'timed';
+    score = 0; round = 1; timeLeft = GAME_TIME; elapsed = 0;
+    maxCombo = 0; totalZonesDone = 0; totalCutAll = 0;
+    buildField();
+    state = 'playing';
+    startOverlay.hidden = true;
+    endOverlay.hidden = true;
+    pauseOverlay.hidden = true;
+    document.getElementById('mainBtn').textContent = '↺ はじめから';
+    updateHud();
+  }
+  function gameOver(){
+    state = 'over';
+    if(score > best) best = score;
+    endSound();
+    finalScore.textContent = score.toLocaleString('ja-JP') + ' 点';
+    var rank, msg;
+    if(score >= 6000){ rank = '🏆 草刈りマスター！'; }
+    else if(score >= 4000){ rank = '🥇 草刈り名人'; }
+    else if(score >= 2500){ rank = '🥈 なかなかの腕前'; }
+    else if(score >= 1200){ rank = '🥉 まずまずの出発'; }
+    else { rank = '🌱 修行はこれから'; }
+    finalRank.textContent = rank;
+    msg = 'ラウンド ' + round + ' まで進んで、お花を ' + flowerCount + ' 個刈ったよ。';
+    if(best > score) msg += ' 今回のベストは ' + best.toLocaleString('ja-JP') + ' 点。';
+    else if(score > 0) msg += ' 今回のベスト更新！';
+    finalDetail.textContent = msg;
+    finalStats.textContent = '最大コンボ ' + maxCombo + ' 連 ／ 区画クリア ' + totalZonesDone + ' 回 ／ 刈った草 ' + totalCutAll + ' マス ― 時間切れでも、刈った分はぜんぶ記録に残るよ。';
+    endOverlay.hidden = false;
+    document.getElementById('mainBtn').textContent = '⏱ 60秒スタート';
+    updateHud();
+  }
+  function togglePause(){
+    if(state === 'playing'){
+      state = 'paused'; pauseOverlay.hidden = false;
+      document.getElementById('pauseBtn').textContent = '▶ つづける';
+    } else if(state === 'paused'){
+      state = 'playing'; pauseOverlay.hidden = true;
+      document.getElementById('pauseBtn').textContent = '⏸ 一時停止';
+    }
+  }
+
+  function loop(ts){
+    if(!lastTs) lastTs = ts;
+    var dt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    if(hitstop > 0){
+      // ヒットストップ：完了の瞬間だけ世界を止める（描画は続ける）
+      hitstop -= dt;
+      render(0);
+    } else {
+      update(dt);
+      render(dt);
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // ---------- 入力 ----------
+  window.addEventListener('keydown', function(e){
+    var k = e.key.toLowerCase();
+    if(['arrowup','arrowdown','arrowleft','arrowright',' '].indexOf(k) >= 0) e.preventDefault();
+    if(k === ' '){ if(state === 'playing' || state === 'paused'){ ensureAudio(); togglePause(); } return; }
+    keys[k] = true;
+  });
+  window.addEventListener('keyup', function(e){ keys[e.key.toLowerCase()] = false; });
+  window.addEventListener('blur', function(){ keys = {}; });
+
+  function pointerPos(e){
+    var rect = canvas.getBoundingClientRect();
+    return { x: (e.clientX - rect.left) / rect.width * W, y: (e.clientY - rect.top) / rect.height * H };
+  }
+  canvas.addEventListener('pointerdown', function(e){
+    ensureAudio();
+    var p = pointerPos(e); pointer.active = true; pointer.x = p.x; pointer.y = p.y;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if(!pointer.active) return;
+    var p = pointerPos(e); pointer.x = p.x; pointer.y = p.y;
+  });
+  function pointerEnd(){ pointer.active = false; }
+  canvas.addEventListener('pointerup', pointerEnd);
+  canvas.addEventListener('pointercancel', pointerEnd);
+
+  document.getElementById('startBtn').addEventListener('click', function(){ startGame('timed'); });
+  document.getElementById('zenBtn').addEventListener('click', function(){ startGame('zen'); });
+  document.getElementById('zenBtn2').addEventListener('click', function(){
+    if(state === 'paused') togglePause();
+    startGame('zen');
+  });
+  document.getElementById('retryBtn').addEventListener('click', function(){ startGame(mode); });
+  document.getElementById('mainBtn').addEventListener('click', function(){
+    if(state === 'paused') togglePause();
+    startGame(state === 'ready' || state === 'over' ? 'timed' : mode);
+  });
+  document.getElementById('pauseBtn').addEventListener('click', function(){ ensureAudio(); togglePause(); });
+  document.getElementById('resumeBtn').addEventListener('click', togglePause);
+  var soundBtn = document.getElementById('soundBtn');
+  soundBtn.addEventListener('click', function(){
+    soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? '🔊 音 ON' : '🔇 音 OFF';
+    soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    if(soundOn) ensureAudio();
+  });
+
+  // ---------- 初期化 ----------
+  buildField();
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
