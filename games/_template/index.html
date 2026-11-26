@@ -3,16 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>000 タイトル</title>
+  <title>000 タイトル | 100 Games</title>
+  <meta name="theme-color" content="#fff7ef" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16141a" media="(prefers-color-scheme: dark)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="../../shared/game.css">
 </head>
 <body>
   <header class="game-header">
-    <h1>000 タイトル</h1>
-    <a href="../../">← 一覧へ</a>
+    <a class="btn btn-ghost" href="../../">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      一覧へ
+    </a>
+    <h1><span class="no">000</span>タイトル</h1>
   </header>
-  <canvas class="game" id="game"></canvas>
-  <p class="game-help">遊び方の説明をここに書く。</p>
+  <main class="game-stage">
+    <canvas class="game" id="game" tabindex="0" aria-label="ゲーム画面"></canvas>
+  </main>
+  <section class="game-help" aria-label="遊び方">
+    <p>遊び方の説明をここに書く。<kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> で移動。</p>
+  </section>
   <script type="module" src="./main.js"></script>
 </body>
 </html>

@@ -1,21 +1,71 @@
-/* 各ゲームページ共通のレイアウト */
+/* 100 Games 共通スタイル
+ * - 色・角丸・影・動きはすべてトークン（CSS 変数）で管理する
+ * - canvas 側も getComputedStyle で同じトークンを読むので、ダークモードも自動で揃う
+ * - フォント: 英数字は Fredoka、日本語は M PLUS Rounded 1c（丸ゴシックで統一感を出す）
+ */
 :root {
-  --bg: #f4f1ea;
-  --fg: #1f1d1a;
-  --muted: #6b665d;
-  --accent: #d9480f;
+  color-scheme: light dark;
+
+  /* 色（コントラストは WCAG AA 4.5:1 以上を確認済み） */
+  --bg: #fff7ef;
+  --bg-deep: #f6eadc;
+  --fg: #1f1a17;
+  --muted: #5f574f;          /* bg 上 6.7:1 */
   --panel: #ffffff;
-  --border: #ddd6c8;
+  --border: #eadfd2;
+  --accent: #e8590c;          /* 塗り（図形・バー）用 */
+  --accent-ink: #b8420a;      /* 文字用（白地 5.5:1） */
+  --accent-soft: #ffe8d9;
+  --on-accent: #ffffff;
+  --button: #c2450c;          /* ボタン地（白文字 5.1:1） */
+  --gold: #f08c00;
+  --ring: #7048e8;            /* フォーカスリング（アクセントと区別できる紫） */
+
+  /* 形 */
+  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 6px 16px -8px rgb(120 60 20 / 0.25);
+  --shadow-hover: 0 2px 0 rgb(0 0 0 / 0.04), 0 14px 28px -12px rgb(120 60 20 / 0.35);
+
+  /* 動き */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+
+  /* 文字 */
+  --font-display: "Fredoka", "M PLUS Rounded 1c", system-ui, sans-serif;
+  --font-body: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+
+  /* 余白（4px 刻み） */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17161a;
-    --fg: #ecebe8;
-    --muted: #9a968e;
+    --bg: #16141a;
+    --bg-deep: #1c1a21;
+    --fg: #f1ede8;
+    --muted: #a8a29a;         /* panel 上 6.4:1 */
+    --panel: #221f27;
+    --border: #3a3540;
     --accent: #ff8a4c;
-    --panel: #222126;
-    --border: #35333a;
+    --accent-ink: #ffa06b;
+    --accent-soft: #3a2619;
+    --on-accent: #1a1209;
+    --button: #ff8a4c;        /* 濃い文字 7.9:1 */
+    --gold: #ffc14d;
+    --ring: #b197fc;
+    --shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 8px 20px -10px rgb(0 0 0 / 0.6);
+    --shadow-hover: 0 2px 0 rgb(0 0 0 / 0.3), 0 16px 32px -12px rgb(0 0 0 / 0.7);
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur: 0ms; }
 }
 
 * { box-sizing: border-box; }
@@ -23,42 +73,118 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px;
-  gap: 12px;
+  padding: var(--space-4);
+  gap: var(--space-4);
+  -webkit-tap-highlight-color: transparent;
 }
 
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.25; text-wrap: balance; }
+
+a { color: var(--accent-ink); }
+
+/* キーボード操作時だけ見えるフォーカスリング */
+:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+kbd {
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- ボタン ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: 700 0.95rem/1 var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out), background-color var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.btn:active { transform: scale(0.96); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn-primary { background: var(--button); color: var(--on-accent); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { color: var(--fg); border-color: var(--muted); }
+
+/* ---- ゲームページ ---- */
 .game-header {
   width: 100%;
   max-width: 720px;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: center;
+  gap: var(--space-3);
 }
-.game-header h1 { font-size: 1.25rem; margin: 0; }
-.game-header a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
-.game-header a:hover { color: var(--accent); }
+.game-header h1 { font-size: 1.35rem; margin: 0; display: flex; align-items: baseline; gap: var(--space-2); }
+.game-header h1 .no {
+  font-size: 0.8em;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.game-header .btn { padding: 0 var(--space-3); flex: none; }
+
+.game-stage {
+  width: 100%;
+  max-width: 720px;
+  position: relative;
+}
 
 canvas.game {
   width: 100%;
-  max-width: 720px;
   height: auto;
   background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
   display: block;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
+canvas.game:focus-visible { border-radius: var(--radius-lg); outline-offset: 4px; }
 
 .game-help {
   max-width: 720px;
   width: 100%;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-deep);
+  border-radius: var(--radius);
 }
+.game-help p { margin: 0; }
+.game-help p + p { margin-top: var(--space-1); }
