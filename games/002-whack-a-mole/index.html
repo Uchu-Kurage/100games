@@ -417,38 +417,36 @@
   </head>
   <body>
     <div class="wrap">
-      <!-- あつめたモグラ（数え上げ表示） -->
       <div class="collection" id="collectionPanel">
         <div class="big-count">
-          <div class="bc-label">あつめた かず</div>
+          <div class="bc-label">あつめた</div>
           <div><span class="bc-num" id="countValue">0</span><span class="bc-unit"> ひき</span></div>
         </div>
         <div class="basket">
           <div class="b-label">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10h16l-1.7 8.2A2.5 2.5 0 0 1 15.9 20H8.1a2.5 2.5 0 0 1-2.4-1.8L4 10Z" fill="#b07a45" stroke="#7c4f2a" stroke-width="1.4"/><path d="M7.5 10 12 3.5 16.5 10" fill="none" stroke="#7c4f2a" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 14h11" stroke="#7c4f2a" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg>
-            あつめた モグラたち
           </div>
-          <div class="basket-icons" id="basketIcons"><span class="empty">まだ いないよ</span></div>
+          <div class="basket-icons" id="basketIcons"><span class="empty"></span></div>
         </div>
       </div>
 
       <!-- HUD -->
       <div class="hud has-time" id="hudRow" aria-live="off">
         <div class="stat"><div class="label">あつめた</div><div class="value attack-progress"><span id="countHud">0</span><small> / 50ひき</small></div></div>
-        <div class="stat"><div class="label">スコア</div><div class="value" id="scoreValue">0</div></div>
+        <div class="stat"><div class="label">てん</div><div class="value" id="scoreValue">0</div></div>
         <div class="stat"><div class="label">れんぞく</div><div class="value" id="streakValue">0</div></div>
-        <div class="stat" id="timeStat"><div class="label" id="timeLabel">タイム</div><div class="value"><span id="timeValue">0:00</span></div></div>
+        <div class="stat" id="timeStat"><div class="label" id="timeLabel">じかん</div><div class="value"><span id="timeValue">0:00</span></div></div>
       </div>
       <div id="praiseLine" aria-live="polite"></div>
 
       <div class="progress-row">
         <div class="progress-meta">
           <span id="goalLabel">0 / 50ひき　あと 50 ひき</span>
-          <span class="stars" id="starMeter" aria-label="もらった星"></span>
+          <span class="stars" id="starMeter" aria-label="ほし"></span>
         </div>
         <div class="bar"><div id="goalBar"></div></div>
         <div class="bar timebar" id="timeBarWrap" hidden><div id="timeBar" style="width:100%"></div></div>
-        <div class="mode-note" id="modeNote">50ひき タイムアタック：50ひき つかまえるまでの じかんを はかるよ</div>
+        <div class="mode-note" id="modeNote"></div>
         <div style="display:none"><span id="goldValue">0</span></div>
       </div>
 
@@ -460,42 +458,42 @@
                 <div class="demo-pit"></div>
                 <svg class="demo-hand" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L21 13 H15.5 V22 H8.5 V13 H3 Z" fill="#ffb703" stroke="#c78f08" stroke-width="1.4" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
               </div>
-              <p>モグラが でたら タップ！<br />50ひき つかまえるまでの じかんを はかろう。</p>
+              <p>もぐらが でたら さわってね<br />50ひき あつめよう</p>
               <div class="mode-btns">
-                <button class="btn" id="startFreeBtn" type="button">50ひき タイムアタック<span class="btn-sub">スタートと同時に タイマーが うごくよ</span></button>
-                <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">じかん なしで あそぶ<span class="btn-sub">おわりは じぶんできめる ・ ゆっくり あそびたいとき</span></button>
+                <button class="btn" id="startFreeBtn" type="button">あそぶ</button>
+                <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">ゆっくり あそぶ</button>
               </div>
             </div>
           </div>
 
           <div class="overlay" id="resultOverlay" hidden>
             <div class="overlay-card">
-              <h2 id="resultTitle">おつかれさま！</h2>
-              <p id="resultComment">よく あつめたね。</p>
+              <h2 id="resultTitle">よく あつめたね</h2>
+              <p id="resultComment"></p>
               <div class="result-time" id="rTimeWrap">
-                <div class="rt-label" id="rTimeLabel">クリアタイム（50ひき）</div>
+                <div class="rt-label" id="rTimeLabel">じかん</div>
                 <div class="rt-num" id="rTime">0:00.0</div>
-                <div class="rt-best" id="rBest">ベストタイム：—</div>
+                <div class="rt-best" id="rBest"></div>
               </div>
-              <div class="result-big"><span class="rb-num" id="rCount">0</span> ひき つかまえた！</div>
+              <div class="result-big"><span class="rb-num" id="rCount">0</span> ひき</div>
               <div class="result-grid">
-                <div class="r"><div class="rl">スコア</div><div class="rv" id="rScore">0</div></div>
-                <div class="r"><div class="rl">さいだい れんぞく</div><div class="rv" id="rCombo">0</div></div>
-                <div class="r"><div class="rl">金のモグラ</div><div class="rv"><span id="rGold">0</span><small> ひき</small></div></div>
-                <div class="r"><div class="rl">ごほうびの星</div><div class="rv" id="rStars">0<small> こ</small></div></div>
+                <div class="r"><div class="rl">てん</div><div class="rv" id="rScore">0</div></div>
+                <div class="r"><div class="rl">れんぞく</div><div class="rv" id="rCombo">0</div></div>
+                <div class="r"><div class="rl">きんの もぐら</div><div class="rv"><span id="rGold">0</span><small> ひき</small></div></div>
+                <div class="r"><div class="rl">ほし</div><div class="rv" id="rStars">0<small> こ</small></div></div>
                 <div class="r"><div class="rl">あみ</div><div class="rv" id="rNet" style="font-size:15px; padding-top:6px;">ふつう</div></div>
-                <div class="r"><div class="rl">モード</div><div class="rv" id="rMode" style="font-size:15px; padding-top:6px;">じかん なし</div></div>
+                <div class="r"><div class="rl">あそびかた</div><div class="rv" id="rMode" style="font-size:15px; padding-top:6px;">ゆっくり</div></div>
               </div>
               <div class="mode-btns">
-                <button class="btn" id="againBtn" type="button">また あそぶ</button>
-                <button class="btn secondary" id="modeBtn" type="button" style="flex:none;">モードを えらぶ</button>
+                <button class="btn" id="againBtn" type="button">もういちど</button>
+                <button class="btn secondary" id="modeBtn" type="button" style="flex:none;">さいしょから</button>
               </div>
             </div>
           </div>
 
       <!-- Board -->
       <div class="board-frame" id="boardFrame" hidden>
-        <div class="board" id="board" role="group" aria-label="モグラの穴 3×3">
+        <div class="board" id="board" role="group" aria-label="もぐらの あな">
           <!-- holes injected by JS -->
           <div id="net" aria-hidden="true"></div>
           <!-- 盤面の上にはメッセージを重ねない（称賛は盤面の外の #praiseLine に表示） -->
@@ -506,43 +504,26 @@
 
       <div class="controls">
         <button class="btn secondary" id="pauseBtn" type="button" disabled>やすむ</button>
-        <button class="btn secondary" id="endBtn" type="button" disabled>おしまいにする</button>
-        <button class="btn secondary" id="soundBtn" type="button" aria-pressed="true">音：オン</button>
+        <button class="btn secondary" id="endBtn" type="button" disabled>おしまい</button>
+        <button class="btn secondary" id="soundBtn" type="button" aria-pressed="true">おと あり</button>
       </div>
 
+
       <section class="notes">
-        <h2>あそびかた</h2>
+        <h2>保護者向け：教育的観点について</h2>
+        <p>このゲームは「5歳児でも遊べるゲームを100つくる」の調査レポートに基づき、5歳前後の子ども向けの設計指針に沿って作っています。このセクションは保護者の方への説明です（ゲーム画面の文字は、子ども向けにひらがなと数字だけに絞っています）。</p>
+        <h3>設計で大切にしたこと</h3>
         <ul>
-          <li>モグラが顔を出したら、その穴をタップ。つかまえたモグラは喜んでジャンプして、上のカゴに集まります。パソコンでは数字キー <b>1〜9</b>（左上から順）でもつかまえられます。</li>
-          <li><b>50ひき タイムアタック（標準モード）</b>：スタートと同時にタイマーがカウントアップします。50匹つかまえた時点で終了し、かかった時間（クリアタイム）が結果画面に大きく表示されます。進み具合は盤面の上の表示で「○ / 50ひき　あと ○ひき」と常時分かります。今回のあそびの中でのベストタイムも結果に表示されます。</li>
-          <li><b>じかん なし モード（任意）</b>：自分のペースで遊んで、「おしまいにする」で終われます。旧60秒モードは整理しました。</li>
-          <li>つづけて つかまえると「れんぞく」が伸びて、スコア倍率とポップ音のピッチが上がります。逃がしても罰はなし。れんぞくが静かに切れるだけで、記録（さいだい れんぞく）は残ります。</li>
-          <li>たまに出る<b>金のモグラ</b>は出ている時間が短いかわりに50点（倍率つき）。</li>
-          <li>30秒あそぶと虫取り網が大きくなって、つかまえると隣の穴のモグラまで一緒に集められるようになります。</li>
-          <li>しばらくタップがないと、出ているモグラが大きく揺れて光って「ここだよ」と教えてくれます。</li>
+          <li><b class="tag pink">「叩く」→「集める」</b>ハンマーを虫取り網に替え、つかまえたモグラが笑顔でジャンプしてカゴに集まる表現にしました。乱暴さのない関わり方で遊べます。</li>
+          <li><b class="tag">文字に頼らない案内</b>スタート画面は、顔を出すモグラのアニメーションで遊び方を示します。穴とモグラは大きく、タップ対象は指1本で十分な大きさです。</li>
+          <li><b class="tag">足場かけヒント</b>約7秒タップがないと、出ているモグラが大きく揺れて光り、矢印が「ここだよ」と示します。つまずいたままにならないための支援です。</li>
+          <li><b class="tag gold">過程への称賛と数への関心</b>10匹ごとの完了音と、結果だけでなく過程を褒める言葉を入れています。集めた数が大きな数字とカゴの中身で増えていく様子は、数への関心につながることを意図しています。</li>
+          <li><b class="tag">罰なし・時間は記録として</b>逃がしても罰はありません。標準モードの時間は制限（失敗）ではなく「50匹集めるまでにかかった時間」という記録として扱い、自分のペースで終えられるモードも選べます。</li>
         </ul>
-
-        <h3>今回の変更：見やすさと操作のじゃまにならない表示</h3>
-        <ul>
-          <li><b class="tag pink">盤面に重ねない</b>プレイ中、3×3の盤面の上にはメッセージや大きな数字のポップを一切出しません。称賛は盤面の上のエリアに小さく出し、数は盤面の外のカウンターで更新します。表示はすべてタップ判定を妨げません。</li>
-          <li><b class="tag pink">残る装飾をなくす</b>穴に長く残っていた花の痕跡は、ごく小さく1秒以内で消える控えめなものに変えました。星・花のごほうび散布も盤面上では行いません。盤面とモグラの見やすさを最優先しています。</li>
-          <li><b class="tag pink">盤面の位置を固定</b>画面上部の情報エリア（カゴ・スコア・称賛の一行・進捗バー）はすべて高さを固定しました。カゴのモグラが増えても、称賛が出たり消えたりしても、数字の桁が変わっても、盤面（3×3の穴）の位置は一切動きません。カゴに並ぶモグラは最新の11匹までで、残りは「…あと○ひき」と表示します。</li>
-          <li><b class="tag">「叩く」→「集める」は維持</b>ハンマーではなく虫取り網で集める表現、即時フィードバック（音・モグラの反応）、れんぞくで上がる音階、10匹ごとの完了音、30秒での網の成長、逃がしても罰なし、無操作時のヒントはそのまま残しています。</li>
-        </ul>
-
-        <h3>5歳児向け設計（調査レポートに基づく）</h3>
-        <p>「5歳児でも遊べるゲームを100つくる」の調査レポートで課題とされた「叩く表現の置換」などに沿った改良は維持しています。今回の標準モードは「50匹でゴール」という終わりが分かりやすい形にし、時間は制限（失敗）ではなく記録として扱います。</p>
-        <ul>
-          <li><b class="tag pink">「叩く」→「集める」</b>（指針20）ハンマーを虫取り網に替え、ヒット表現を「つかまえたモグラが笑顔でジャンプしてカゴに集まる」に置き換えました。</li>
-          <li><b class="tag">文字に頼らない案内</b>（指針1・2・5）スタート画面は顔を出すモグラのアニメーションで遊び方を示します。穴とモグラは大きく、タップ対象は指1本で十分な大きさです。</li>
-          <li><b class="tag">足場かけヒント</b>（指針9・14）約7秒タップがないと、出ているモグラが大きく揺れて光り、矢印が「ここだよ」と示します。</li>
-          <li><b class="tag gold">過程への称賛と数への関心</b>（指針11）10匹ごとの完了音（DING）は残し、称賛は盤面の外に小さく表示します。集めた数はカゴとカウンターで増えていくのが分かります。</li>
-        </ul>
-        <p>正直な留保も書いておきます。この遊びで伸びるのは「出てきたものを見落とさずにタップする」という、この遊びの中での反応までで、「注意力全般が上がる」といった広い効果は研究では示されていません（脳トレ型の遠い転移は証拠不十分とする総説があります）。だからこのページでも、育つ力を大げさには言わないことにしています。</p>
-        <p class="src">出典：Sesame Workshop『Best Practices: Designing Touch Tablet Experiences for Preschoolers』(2012) <a href="https://regmedia.co.uk/2012/12/19/sesame_street_best_practices.pdf">regmedia.co.uk</a>／ American Academy of Pediatrics『Media and Young Minds』(2016) <a href="https://publications.aap.org/pediatrics/article/138/5/e20162591/60503/Media-and-Young-Minds?autologincheck=redirected">publications.aap.org</a>／ Hirsh-Pasek et al. (2015) 学習アプリの4本柱 <a href="https://www.psychologicalscience.org/news/releases/science-of-learning-can-help-parents-developers-grade-educational-apps.html">psychologicalscience.org</a>／ 文部科学省「幼児期の終わりまでに育ってほしい姿」 <a href="http://www.mext.go.jp:443/content/1422303_08.pdf">mext.go.jp</a></p>
+        <h3>効果についての正直な留保</h3>
+        <p>この遊びで伸びるのは「出てきたものを見落とさずにタップする」という、この遊びの中での反応までです。「注意力全般が上がる」といった広い効果（遠い転移）は、脳トレ型ゲームの研究総説では証拠不十分とされています。だからこのページでも、育つ力を大げさには言わないことにしています。</p>
+        <p class="src">出典：Sesame Workshop『Best Practices: Designing Touch Tablet Experiences for Preschoolers』(2012) <a href="https://regmedia.co.uk/2012/12/19/sesame_street_best_practices.pdf">regmedia.co.uk</a>／ American Academy of Pediatrics『Media and Young Minds』(2016) <a href="https://publications.aap.org/pediatrics/article/138/5/e20162591/60503/Media-and-Young-Minds?autologincheck=redirected">publications.aap.org</a>／ Hirsh-Pasek et al. (2015) 学習アプリの4本柱（能動的・没頭・意味がある・社会的に関われる） <a href="https://www.psychologicalscience.org/news/releases/science-of-learning-can-help-parents-developers-grade-educational-apps.html">psychologicalscience.org</a>／ 文部科学省「幼児期の終わりまでに育ってほしい姿（10の姿）」 <a href="http://www.mext.go.jp:443/content/1422303_08.pdf">mext.go.jp</a></p>
       </section>
-
-      <p class="foot">5歳児でも遊べるゲーム 2個目 ／ 100個チャレンジ</p>
     </div>
 
     <script>
@@ -656,7 +637,7 @@
           btn.type = "button";
           btn.className = "hole";
           btn.disabled = true; // ゲーム中だけ押せる（開始前はオーバーレイ下で無効）
-          btn.setAttribute("aria-label", "穴 " + (idx + 1));
+          btn.setAttribute("aria-label", "あな " + (idx + 1));
           btn.innerHTML =
             '<span class="key-hint">' + (idx + 1) + '</span>' +
             '<span class="hint-arrow">' + ARROW_SVG + '</span>' +
@@ -1013,7 +994,7 @@
             netBig = true;
             netEl.classList.add("big");
             playGrow();
-            showBannerSingle("あみが 大きくなった！");
+            showBannerSingle("あみが おおきくなった！");
           }
 
           var d = difficulty();
@@ -1054,11 +1035,11 @@
         timeStat.hidden = false;
         timeBarWrap.hidden = true;
         hudRow.classList.add("has-time");
-        if (timeLabel) timeLabel.textContent = isAttack ? "タイム" : "あそんだ じかん";
+        if (timeLabel) timeLabel.textContent = "じかん";
         if (praiseLine) praiseLine.textContent = "";
         modeNote.textContent = isAttack
-          ? "50ひき タイムアタック：50ひき つかまえるまでの じかんを はかるよ"
-          : "じかん なし モード：おわりは じぶんで きめられるよ";
+          ? ""
+          : "";
         state = "playing";
         holes.forEach(function (h) { h.el.disabled = false; });
         boardFrame.hidden = false;
@@ -1085,25 +1066,25 @@
         if (mode === "attack" && isAttackClear) {
           if (bestTimeMs === null || elapsed < bestTimeMs) bestTimeMs = elapsed;
         }
-        document.getElementById("resultTitle").textContent = isAttackClear ? "50ひき つかまえた！ゴール！" : "おつかれさま！";
+        document.getElementById("resultTitle").textContent = isAttackClear ? "50ひき あつめたね" : "おつかれさま";
         document.getElementById("rTimeWrap").style.display = mode === "attack" ? "" : "none";
-        document.getElementById("rTimeLabel").textContent = isAttackClear ? "クリアタイム（50ひき）" : "かかった じかん";
+        document.getElementById("rTimeLabel").textContent = "じかん";
         document.getElementById("rTime").textContent = formatTimePrecise(elapsed);
-        document.getElementById("rBest").textContent = bestTimeMs !== null ? "ベストタイム（今回の あそびの 中で）： " + formatTimePrecise(bestTimeMs) : "ベストタイム：—";
+        document.getElementById("rBest").textContent = bestTimeMs !== null ? "いちばん はやい じかん： " + formatTimePrecise(bestTimeMs) : "";
         document.getElementById("rCount").textContent = count;
         document.getElementById("rScore").textContent = score;
         document.getElementById("rCombo").textContent = maxStreak;
         document.getElementById("rGold").textContent = goldCount;
         document.getElementById("rStars").innerHTML = Math.floor(count / MILESTONE) + "<small> こ</small>";
-        document.getElementById("rNet").textContent = netBig ? "大きくなった" : "ふつう";
-        document.getElementById("rMode").textContent = mode === "attack" ? "50ひき タイムアタック" : "じかん なし";
+        document.getElementById("rNet").textContent = netBig ? "おおきい" : "ふつう";
+        document.getElementById("rMode").textContent = mode === "attack" ? "50ひき" : "ゆっくり";
         var c = document.getElementById("resultComment");
-        if (isAttackClear) c.textContent = "50ひき つかまえたね。よく みて、よく がんばったね！タイムに ちょうせん できたね。";
-        else if (count >= 30) c.textContent = "たくさん あつめたね。よく みて、よく がんばったね！";
-        else if (count >= 15) c.textContent = "よく あつめたね。さいごまで じょうずに つかまえたね。";
-        else if (count >= 5) c.textContent = "よく みつけたね。つぎは もっと あつまるかも。";
-        else if (count >= 1) c.textContent = "はじめの 一歩！つかまえられたね。";
-        else c.textContent = "モグラの でる リズムに 慣れていこう。";
+        if (isAttackClear) c.textContent = "よく みてたね";
+        else if (count >= 30) c.textContent = "よく みてたね";
+        else if (count >= 15) c.textContent = "よく あつめたね";
+        else if (count >= 5) c.textContent = "よく みつけたね";
+        else if (count >= 1) c.textContent = "つかまえたね";
+        else c.textContent = "もぐらが でたら さわってね";
         playDing();
         boardFrame.hidden = true;
         resultOverlay.hidden = false;
@@ -1172,7 +1153,7 @@
       });
       soundBtn.addEventListener("click", function () {
         soundOn = !soundOn;
-        soundBtn.textContent = soundOn ? "音：オン" : "音：オフ";
+        soundBtn.textContent = soundOn ? "おと あり" : "おと なし";
         soundBtn.setAttribute("aria-pressed", soundOn ? "true" : "false");
         if (soundOn) ensureAudio();
       });

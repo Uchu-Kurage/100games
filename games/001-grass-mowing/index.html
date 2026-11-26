@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="color-scheme" content="light dark" />
 <link rel="icon" href="data:," />
-<title>草刈りゲーム</title>
+<title>くさかり</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet" />
@@ -200,127 +200,87 @@
 
   <header class="top">
     <div>
-      <h1><span class="leaf">🌿</span> 草刈りゲーム</h1>
-      <p class="sub">刈るたび気持ちいい、野原をぜんぶ刈り取れ！（じかん制限なし・5歳から遊べる版）</p>
+      <h1><span class="leaf">🌿</span> くさかり</h1>
     </div>
-    <div class="badge">5歳でも遊べるゲーム <b>1 / 100</b> 個目</div>
   </header>
 
   <div class="hud" aria-live="off">
-    <div class="cell"><div class="label">スコア</div><div class="value" id="hudScore">0</div></div>
-    <div class="cell"><div class="label">のこり時間</div><div class="value" id="hudTime">60</div></div>
-    <div class="cell"><div class="label">コンボ</div><div class="value" id="hudCombo">×1.0</div></div>
-    <div class="cell"><div class="label">ラウンド</div><div class="value" id="hudRound">1</div></div>
+    <div class="cell"><div class="label" aria-hidden="true">⭐</div><div class="value" id="hudScore">0</div></div>
+    <div class="cell"><div class="label" aria-hidden="true">⏰</div><div class="value" id="hudTime">∞</div></div>
+    <div class="cell"><div class="label" aria-hidden="true">🔥</div><div class="value" id="hudCombo">×1.0</div></div>
+    <div class="cell"><div class="label" aria-hidden="true">🌿</div><div class="value" id="hudRound">1</div></div>
   </div>
 
   <div class="progress-row">
-    <span class="plabel">刈り進み具合</span>
+    <span class="plabel" aria-hidden="true">🌿</span>
     <div class="progress"><div id="progressBar"></div></div>
     <span class="pval" id="progressVal">0%</span>
   </div>
 
   <div class="zone-row">
-    <span class="plabel">区画クリア</span>
+    <span class="plabel" aria-hidden="true">⭐</span>
     <div class="zone-grid" id="zoneGrid" aria-hidden="true"></div>
     <span class="pval" id="zoneVal">0 / 12</span>
   </div>
 
   <div class="stage" id="stage">
-    <canvas id="game" width="900" height="600" aria-label="草刈りゲームの画面"></canvas>
+    <canvas id="game" width="900" height="600" aria-label="くさかりの がめん"></canvas>
 
     <div class="overlay" id="startOverlay">
-      <h2>🌿 草刈りゲーム</h2>
+      <h2>🌿 くさかり</h2>
       <div class="demo" aria-hidden="true">
         <div class="demo-track">
           <div class="demo-cut"></div>
           <div class="demo-mower">🚜</div>
           <div class="demo-hand">👆</div>
         </div>
-        <div class="demo-cap">ゆびで なぞると くさが 刈れるよ</div>
       </div>
-      <p>くさを ぜんぶ 刈ろう。じかん制限は ないよ。<br>お花はボーナス、岩は よけて 進んでね。</p>
       <div class="mode-row">
-        <button class="btn big" id="zenBtn" type="button">▶ スタート</button>
-        <button class="btn white" id="startBtn" type="button">⏱ 60秒チャレンジ（大人の人向け）</button>
+        <button class="btn big" id="zenBtn" type="button">▶ はじめる</button>
+        <button class="btn white" id="startBtn" type="button">⏱ 60びょう</button>
       </div>
-      <p style="font-size:13px;opacity:.9">キーボード： WASD / 矢印キー　スマホ・タブレット： 画面をドラッグ</p>
     </div>
 
     <div class="count-pop" id="countPop" hidden aria-live="polite">
       <div class="count-num" id="countNum">1</div>
       <div class="count-stars" id="countStars" aria-hidden="true"></div>
-      <div class="count-praise" id="countPraise">よく刈れたね！</div>
+      <div class="count-praise" id="countPraise">よく かったね！</div>
       <div class="count-sub" id="countSub"></div>
     </div>
 
     <div class="overlay" id="endOverlay" hidden>
-      <h2>⏰ タイムアップ！</h2>
+      <h2>⏰ おわり</h2>
       <div class="big-score" id="finalScore">0</div>
       <div class="rank" id="finalRank">—</div>
       <p id="finalDetail">—</p>
-      <p id="finalStats" style="font-size:13px;opacity:.92">—</p>
-      <button class="btn" id="retryBtn" type="button">🔁 もう一度刈る</button>
+      <p id="finalStats" style="font-size:15px;opacity:.95">—</p>
+      <button class="btn" id="retryBtn" type="button">🔁 もういちど</button>
     </div>
 
     <div class="overlay" id="pauseOverlay" hidden>
-      <h2>⏸ 休憩中</h2>
-      <p>草は待ってくれているよ。</p>
+      <h2>⏸ おやすみ</h2>
       <button class="btn" id="resumeBtn" type="button">▶ つづける</button>
     </div>
   </div>
 
   <div class="controls">
-    <button class="btn green" id="mainBtn" type="button">▶ スタート</button>
-    <button class="icon-btn" id="zenBtn2" type="button">🌿 のんびり（最初から）</button>
-    <button class="icon-btn" id="pauseBtn" type="button" aria-label="一時停止">⏸ 一時停止</button>
-    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="音のオン・オフ">🔊 音 ON</button>
+    <button class="btn green" id="mainBtn" type="button">▶ はじめる</button>
+    <button class="icon-btn" id="zenBtn2" type="button">🌿 ゆっくり</button>
+    <button class="icon-btn" id="pauseBtn" type="button" aria-label="おやすみ">⏸ おやすみ</button>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="おと">🔊</button>
   </div>
 
-  <section class="howto">
-    <h3>あそびかた</h3>
+  <section class="howto" aria-label="ほごしゃ むけ">
+    <h3>保護者の方へ（教育的観点）</h3>
     <ul>
-      <li><span class="dot">🖱️</span><span><strong>パソコン：</strong> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> または <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> で移動。<kbd>Space</kbd> で一時停止。</span></li>
-      <li><span class="dot">👆</span><span><strong>スマホ・タブレット：</strong> 野原を指でドラッグすると、その方向に芝刈り機が進むよ。</span></li>
-      <li><span class="dot">🔥</span><span><strong>コンボ：</strong> 休まず刈り続けるとコンボ倍率が上がって、スコアがどんどん伸びる。刈り音のピッチも少しずつ上がっていくよ。切れても罰はないから、自分のペースでOK。</span></li>
-      <li><span class="dot">🔔</span><span><strong>区画クリア：</strong> 野原は12区画。1区画を刈り切ると「DING♪」の完了音＋ボーナス。80%を超えると、残った草が光って教えてくれるよ。</span></li>
-      <li><span class="dot">🌱</span><span><strong>抵抗と解放：</strong> 密な草の中では少し重く、刈れた場所ではスッと軽く進める。たくさん刈ると芝刈り機が育って、刈り幅と速さが上がるよ。</span></li>
-      <li><span class="dot">🏁</span><span><strong>ラウンド：</strong> 野原を95%以上刈るとクリアボーナス＆次の野原へ。ラウンドが進むほど岩が増えるよ。</span></li>
-      <li><span class="dot">🌿</span><span><strong>標準は制限時間なし：</strong> ふだんは時間に追われず、自分のペースで刈れるのが標準モード。往復して刈ると地面に縞模様が残るから、きれいに刈る楽しみ方もできるよ。60秒チャレンジは、大人が選べる任意モードとして残してあるよ。</span></li>
-      <li><span class="dot">🔢</span><span><strong>区画を数えよう：</strong> 区画を1つ刈り切るたびに、大きな数字で「1、2、3…」と数え上げるよ。その区画で刈れた草の本数も大きな数字で出るから、文字が読めなくても「数が増えた」ことが絵と数字で分かるよ。</span></li>
-      <li><span class="dot">💡</span><span><strong>ヒント：</strong> しばらく（7秒くらい）操作がないと、近くのまだ刈れていない草がやさしく光って教えてくれるよ。</span></li>
-    </ul>
-    <div class="legend">
-      <span><i class="swatch" style="background:#4da52e"></i>草（1点）</span>
-      <span><i class="swatch" style="background:#ffd94d"></i>金の草（20点）</span>
-      <span><i class="swatch" style="background:#ff8fb2"></i>お花（30点）</span>
-      <span><i class="swatch" style="background:#8d8d84"></i>岩（通れない）</span>
-    </div>
-  </section>
-
-  <section class="howto">
-    <h3>5歳向けの工夫（子ども向けゲーム調査の設計指針から）</h3>
-    <ul>
-      <li><span class="dot">🕊️</span><span><strong>制限時間は原則なし（指針：急かさない）：</strong> 標準モードは制限時間なしで、失敗・ゲームオーバーで何かを奪う仕組みはない。60秒モードは任意で選ぶ大人向け。</span></li>
-      <li><span class="dot">🔢</span><span><strong>数への関心につなげる（対応表の「次の一手」）：</strong> 区画完了のたびに完了した区画数を大きな数字で1つずつ数え上げ、その区画で刈った草の本数も表示する。数字は星の絵とセットで大きく出す。</span></li>
-      <li><span class="dot">👆</span><span><strong>文字に頼らない案内（指針：読めなくても分かる）：</strong> スタート画面は、芝刈り機が草を刈りながら進むアニメーションで遊び方を見せる。文章の説明は最小限にし、ボタンは大きくタップしやすくした。</span></li>
-      <li><span class="dot">💡</span><span><strong>足場かけヒント（指針：無操作時のヒント）：</strong> 7秒ほど操作がないと、近くの未刈りエリアがやさしく光る。詰まっても罰せず、次にやることをそっと示す。</span></li>
-      <li><span class="dot">🌸</span><span><strong>過程への称賛（指針：結果より過程を褒める）：</strong> 区画完了時はスコアだけでなく「よく刈れたね」「さいごまでがんばったね」の言葉と、花・星のごほうび演出で、やった過程を褒める。減点や罰はなし。</span></li>
-      <li><span class="dot">🤝</span><span><strong>保護者の方へ：</strong> 一緒に遊ぶときは、区画が終わるたびに出る大きな数字を声に出して一緒に数えてみてください。数への関心は「数字が並ぶものに触れ、声で数える」遊びで育つとされています。</span></li>
+      <li><span class="dot">🔢</span><span><strong>数への関心につなげる：</strong> 区画を1つ刈り切るたびに、完了した区画数を大きな数字で1つずつ数え上げ、その区画で刈った草の本数も大きく表示します。数字と星の絵をセットで見せることで、文字が読めない段階でも「数が増えた」ことを量として感じられるようにしています。一緒に遊ぶときは、出てきた数字を声に出して一緒に数えてみてください。「数字が並ぶものに触れ、声で数える」経験が数への関心を育てるとされています。</span></li>
+      <li><span class="dot">🕊️</span><span><strong>制限時間なし・罰なし：</strong> 標準モードは制限時間なしで、失敗やゲームオーバーで何かを奪う仕組みはありません。急かされず自分のペースで試行錯誤できることが、幼児期の遊びでは大切だと考えられているためです。60秒モードは、大人が任意で選べるものとしてのみ残しています。</span></li>
+      <li><span class="dot">🌸</span><span><strong>過程への称賛：</strong> 区画完了時はスコアだけでなく、取り組んだ過程を褒める言葉と星・花の演出を返します。結果の優劣ではなく「やった過程」に注目する関わりが、挑戦を続ける意欲につながるとされています。減点や罰は入れていません。</span></li>
+      <li><span class="dot">💡</span><span><strong>つまずきへの支援：</strong> しばらく操作がないと、近くのまだ刈れていない場所がやさしく光って、次の行動をそっと示します。間違えても責めず、ヒントで支える足場かけの考え方を取り入れています。</span></li>
+      <li><span class="dot">📖</span><span><strong>根拠と留保：</strong> 数の学習については、数と触れる設計のボードゲームで数の大小や数える力の改善が報告された研究（Ramani &amp; Siegler, 2008）などを参考にしています。ただし「ゲーム全般で頭が良くなる」といった広い効果は実証されておらず、効果が確認されているのは特定の内容と設計の組み合わせに限られます。このゲームも、遊びながら数に親しむきっかけの一つとして位置づけています。</span></li>
     </ul>
   </section>
 
-  <section class="howto">
-    <h3>気持ちよさの工夫（爽快感の調査から）</h3>
-    <ul>
-      <li><span class="dot">⚡</span><span><strong>即時フィードバック：</strong> 刈った瞬間に音・草片・色の変化が返る。コンボが伸びるほど刈り音のピッチが音階を上る。</span></li>
-      <li><span class="dot">🗺️</span><span><strong>痕跡が残る：</strong> 未刈りは濃い緑、刈り済みは明るい黄緑＋縞模様。飛んだ草片もしばらく地面に残って、通った道が地図になる。</span></li>
-      <li><span class="dot">🔔</span><span><strong>小さな完了の連鎖：</strong> 全体%の表示に加えて、12区画ごとの完了を「DING♪」で確定。大きな達成を小さく区切った。</span></li>
-      <li><span class="dot">🎚️</span><span><strong>盛りすぎない：</strong> 画面シェイクは使わず、止まる演出（ヒットストップ）は区画完了とお花の瞬間だけ。演出は「何が起きたか分かる」範囲に抑えた。</span></li>
-      <li><span class="dot">🕊️</span><span><strong>自分のペース：</strong> 標準モードは時間制限なし。60秒モードでも、時間切れで刈った分が消えることはなく、スコアと記録に残る。</span></li>
-    </ul>
-  </section>
-
-  <footer>5歳児でも遊べるゲームを100個つくる — 1個目</footer>
 </div>
 
 <script>
@@ -365,7 +325,7 @@
   var countStars = document.getElementById('countStars');
   var countPraise = document.getElementById('countPraise');
   var countSub = document.getElementById('countSub');
-  var PRAISES = ['よく刈れたね！', 'さいごまで がんばったね！', 'よく見て 刈れたね！', 'ていねいに 刈れたね！', 'じょうずに 刈れたね！'];
+  var PRAISES = ['よく かったね！', 'がんばったね！', 'よく みてたね！', 'じょうずだね！', 'すごいね！'];
 
   // ---------- 状態 ----------
   var state = 'ready'; // ready | playing | paused | over
@@ -810,7 +770,7 @@
     var zw = W / ZONE_COLS, zh = H / ZONE_ROWS;
     floaters.push({
       x: (z.idx % ZONE_COLS) * zw + zw / 2, y: Math.floor(z.idx / ZONE_COLS) * zh + zh / 2,
-      text: '区画クリア！ +' + bonus, color: '#fff3a0', size: 24, life: 1.2
+      text: '⭐ +' + bonus, color: '#fff3a0', size: 24, life: 1.2
     });
     zoneFlashes.push({ zone: z.idx, life: 1 });
     hitstop = Math.max(hitstop, 0.09); // 完了の瞬間だけの小さな止め
@@ -852,7 +812,7 @@
       if(n < target){
         countTimers.push(setTimeout(step, 330));
       } else {
-        countSub.textContent = 'この区画で くさ ' + z.total + ' 本 刈れたよ';
+        countSub.textContent = 'くさ ' + z.total + ' こ';
         countTimers.push(setTimeout(function(){ countPop.hidden = true; }, 1500));
       }
     }
@@ -870,7 +830,7 @@
       mowerLevel = lvl;
       mower.r = 30 + (lvl - 1) * 4;
       mower.speed = 300 + (lvl - 1) * 18;
-      floaters.push({ x: mower.x, y: mower.y - 44, text: '刈り幅アップ！ Lv' + lvl, color: '#ffd94d', size: 22, life: 1.1 });
+      floaters.push({ x: mower.x, y: mower.y - 44, text: 'おおきく なった！', color: '#ffd94d', size: 22, life: 1.1 });
       hitstop = Math.max(hitstop, 0.05);
       levelUpSound();
     }
@@ -993,7 +953,7 @@
     if(totalCuttable > 0 && cutCount / totalCuttable >= 0.95){
       var bonus = 300 + round * 100;
       score += bonus;
-      floaters.push({ x: W/2, y: H/2 - 60, text: 'ラウンドクリア！ +' + bonus, color: '#ffd94d', size: 34, life: 1.6 });
+      floaters.push({ x: W/2, y: H/2 - 60, text: '⭐ やった！ +' + bonus, color: '#ffd94d', size: 34, life: 1.6 });
       round++;
       hitstop = Math.max(hitstop, 0.12);
       shake = 0.25;
@@ -1018,11 +978,11 @@
     hudScore.textContent = score.toLocaleString('ja-JP');
     if(mode === 'zen'){
       hudTime.textContent = '∞';
-      hudTimeLabel.textContent = 'のんびり';
+      hudTimeLabel.textContent = '⏰';
       hudTime.classList.remove('time-low');
     } else {
       hudTime.textContent = Math.ceil(timeLeft);
-      hudTimeLabel.textContent = 'のこり時間';
+      hudTimeLabel.textContent = '⏰';
       hudTime.classList.toggle('time-low', state === 'playing' && timeLeft <= 10);
     }
     zoneVal.textContent = zonesDone + ' / ' + ZONE_N;
@@ -1058,21 +1018,21 @@
     state = 'over';
     if(score > best) best = score;
     endSound();
-    finalScore.textContent = score.toLocaleString('ja-JP') + ' 点';
+    finalScore.textContent = score.toLocaleString('ja-JP');
     var rank, msg;
-    if(score >= 6000){ rank = '🏆 草刈りマスター！'; }
-    else if(score >= 4000){ rank = '🥇 草刈り名人'; }
-    else if(score >= 2500){ rank = '🥈 なかなかの腕前'; }
-    else if(score >= 1200){ rank = '🥉 まずまずの出発'; }
-    else { rank = '🌱 修行はこれから'; }
+    if(score >= 6000){ rank = '🏆 すごい！'; }
+    else if(score >= 4000){ rank = '🥇 すごい！'; }
+    else if(score >= 2500){ rank = '🥈 やったね！'; }
+    else if(score >= 1200){ rank = '🥉 やったね！'; }
+    else { rank = '🌱 がんばったね！'; }
     finalRank.textContent = rank;
-    msg = 'ラウンド ' + round + ' まで進んで、お花を ' + flowerCount + ' 個刈ったよ。';
-    if(best > score) msg += ' 今回のベストは ' + best.toLocaleString('ja-JP') + ' 点。';
-    else if(score > 0) msg += ' 今回のベスト更新！';
+    msg = '🌸 ' + flowerCount + '　🌿 ' + round;
+    if(best > score) msg += '　⭐ ' + best.toLocaleString('ja-JP');
+    else if(score > 0) msg += '　⭐ すごい！';
     finalDetail.textContent = msg;
-    finalStats.textContent = '最大コンボ ' + maxCombo + ' 連 ／ 区画クリア ' + totalZonesDone + ' 回 ／ 刈った草 ' + totalCutAll + ' マス ― 時間切れでも、刈った分はぜんぶ記録に残るよ。';
+    finalStats.textContent = '🔥 ' + maxCombo + '　⭐ ' + totalZonesDone + '　🌿 ' + totalCutAll;
     endOverlay.hidden = false;
-    document.getElementById('mainBtn').textContent = '▶ スタート';
+    document.getElementById('mainBtn').textContent = '▶ はじめる';
     updateHud();
   }
   function togglePause(){
@@ -1081,7 +1041,7 @@
       document.getElementById('pauseBtn').textContent = '▶ つづける';
     } else if(state === 'paused'){
       state = 'playing'; pauseOverlay.hidden = true;
-      document.getElementById('pauseBtn').textContent = '⏸ 一時停止';
+      document.getElementById('pauseBtn').textContent = '⏸ おやすみ';
     }
   }
 
@@ -1143,7 +1103,7 @@
   var soundBtn = document.getElementById('soundBtn');
   soundBtn.addEventListener('click', function(){
     soundOn = !soundOn;
-    soundBtn.textContent = soundOn ? '🔊 音 ON' : '🔇 音 OFF';
+    soundBtn.textContent = soundOn ? '🔊' : '🔇';
     soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
     if(soundOn) ensureAudio();
   });
