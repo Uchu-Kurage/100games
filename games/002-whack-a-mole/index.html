@@ -296,6 +296,12 @@
       .result-time .rt-label { font-size: 13px; font-weight: 700; color: var(--ink-soft); }
       .result-time .rt-num { font-size: 46px; font-weight: 900; line-height: 1.1; color: var(--accent-dark); font-variant-numeric: tabular-nums; }
       .result-time .rt-best { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
+      .result-rank { margin: 8px 0 4px; padding: 10px 8px 8px; background: var(--bar-track); border-radius: 12px; }
+      .result-rank[hidden] { display: none; }
+      .result-rank .rr-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); letter-spacing: 0.04em; }
+      .result-rank .rr-stars { font-size: 30px; line-height: 1.15; color: var(--gold-dark); letter-spacing: 0.12em; }
+      .result-rank .rr-stars .off { color: var(--panel-edge); }
+      .result-rank .rr-note { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
 
       /* net cursor （虫取り網） */
       #net {
@@ -460,7 +466,7 @@
               </div>
               <p>もぐらが でたら さわってね<br />50ひき あつめよう</p>
               <div class="mode-btns">
-                <button class="btn" id="startFreeBtn" type="button">あそぶ</button>
+                <button class="btn" id="startFreeBtn" type="button">あそぶ<span class="btn-sub">そらぶりで れんぞくが 0に なるよ</span></button>
                 <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">ゆっくり あそぶ</button>
               </div>
             </div>
@@ -474,6 +480,11 @@
                 <div class="rt-label" id="rTimeLabel">じかん</div>
                 <div class="rt-num" id="rTime">0:00.0</div>
                 <div class="rt-best" id="rBest"></div>
+              </div>
+              <div class="result-rank" id="rRankWrap" hidden>
+                <div class="rr-label">はやさ ほし</div>
+                <div class="rr-stars" id="rRankStars" aria-label="ほし"></div>
+                <div class="rr-note" id="rRankNote"></div>
               </div>
               <div class="result-big"><span class="rb-num" id="rCount">0</span> ひき</div>
               <div class="result-grid">
@@ -895,13 +906,23 @@
         setTimeout(function () { board.classList.remove("hitstop"); }, 50);
       }
 
+      function rankForTime(ms) {
+        if (ms <= 60000) return 3;
+        if (ms <= 100000) return 2;
+        return 1;
+      }
+      function playMiss() {
+        tone(180, 0.07, "sine", 0.10, 0, 130);
+      }
+
       function catchAt(idx, direct) {
         if (state !== "playing") return;
         ensureAudio();
         lastActivity = elapsed;
         clearHints();
         var h = holes[idx];
-        if (h.mole) { catchMole(h); }
+        var caughtAny = false;
+        if (h.mole && !h.mole.hit) { catchMole(h); caughtAny = true; }
         // 大きな網は隣の穴まで一緒に集める
         if (direct && netBig) {
           var row = Math.floor(idx / 3), col = idx % 3;
@@ -910,7 +931,15 @@
           if (row < 2) nb.push(idx + 3);
           if (col > 0) nb.push(idx - 1);
           if (col < 2) nb.push(idx + 1);
-          nb.forEach(function (n) { if (holes[n].mole) catchMole(holes[n]); });
+          nb.forEach(function (n) { if (holes[n].mole && !holes[n].mole.hit) { catchMole(holes[n]); caughtAny = true; } });
+        }
+        // 大人層（タイムアタックのみ）：空振りで倍率（れんぞく）がリセット。時間ペナルティはなし。ゆっくりモードには適用しない
+        if (direct && mode === "attack" && !caughtAny) {
+          if (streak !== 0) {
+            streak = 0;
+            playMiss();
+            updateHUD();
+          }
         }
       }
 
@@ -1071,6 +1100,22 @@
         document.getElementById("rTimeLabel").textContent = "じかん";
         document.getElementById("rTime").textContent = formatTimePrecise(elapsed);
         document.getElementById("rBest").textContent = bestTimeMs !== null ? "いちばん はやい じかん： " + formatTimePrecise(bestTimeMs) : "";
+        var rankWrap = document.getElementById("rRankWrap");
+        var rankStarsEl = document.getElementById("rRankStars");
+        var rankNoteEl = document.getElementById("rRankNote");
+        if (isAttackClear) {
+          var rank = rankForTime(elapsed);
+          var starsHtml = "";
+          for (var si = 0; si < 3; si++) {
+            starsHtml += si < rank ? "★" : '<span class="off">★</span>';
+          }
+          rankStarsEl.innerHTML = starsHtml;
+          rankStarsEl.setAttribute("aria-label", "ほし " + rank + " こ");
+          rankNoteEl.textContent = rank === 3 ? "いちばん はやい ほし" : (rank === 2 ? "あと すこしで ほし 3こ" : "つぎは もっと はやく");
+          rankWrap.hidden = false;
+        } else {
+          rankWrap.hidden = true;
+        }
         document.getElementById("rCount").textContent = count;
         document.getElementById("rScore").textContent = score;
         document.getElementById("rCombo").textContent = maxStreak;

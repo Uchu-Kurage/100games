@@ -124,6 +124,10 @@
     border-radius:999px;padding:7px 20px;box-shadow:0 6px 16px rgba(0,0,0,.28);
   }
   .count-sub{color:#fff;font-weight:900;font-size:clamp(14px,3.8vw,18px);text-shadow:0 2px 4px rgba(0,0,0,.45);}
+  /* とりのこし なし（大人層・60びょうモードの区画100%完了）専用の見た目：通常完了と色で区別する */
+  .count-pop.perfect .count-num{color:#ffe14d;text-shadow:0 3px 0 #a86e00,0 0 22px rgba(255,210,40,.95),0 6px 18px rgba(0,0,0,.35);}
+  .count-pop.perfect .count-praise{background:#ffd94d;color:#5a3d00;border:3px solid #fff;box-shadow:0 0 0 3px #e8a812,0 8px 20px rgba(0,0,0,.35);}
+  .count-pop.perfect .count-stars{color:#ffe14d;}
   @media (prefers-reduced-motion: reduce){ .count-num.pop{animation:none;} }
   .btn.white{background:#fff;color:#2c7a1e;box-shadow:0 5px 0 #cfd8c2,0 10px 18px rgba(0,0,0,.25);}
   .btn.white:active{box-shadow:0 2px 0 #cfd8c2,0 6px 12px rgba(0,0,0,.25);}
@@ -152,6 +156,9 @@
   .overlay p{margin:0;font-size:15px;font-weight:700;line-height:1.7;max-width:30em;}
   .overlay .big-score{font-size:clamp(34px,8vw,52px);font-weight:900;color:#ffd94d;line-height:1;font-variant-numeric:tabular-nums;}
   .overlay .rank{font-size:17px;font-weight:900;background:#fff;color:#2c7a1e;border-radius:999px;padding:6px 18px;}
+  .overlay .rank.stars{font-size:clamp(26px,6vw,34px);letter-spacing:.18em;color:#e8a812;background:#fffbe8;border:2px solid #ffd94d;line-height:1.2;padding:6px 22px;}
+  .overlay .best-note{font-size:15px;font-weight:900;background:#ffd94d;color:#5a3d00;border-radius:999px;padding:6px 18px;}
+  .overlay .best-note[hidden]{display:none;}
   .btn{
     font-family:inherit;font-weight:900;font-size:17px;cursor:pointer;
     border:none;border-radius:999px;padding:12px 30px;min-height:52px;
@@ -251,7 +258,8 @@
     <div class="overlay" id="endOverlay" hidden>
       <h2>⏰ おわり</h2>
       <div class="big-score" id="finalScore">0</div>
-      <div class="rank" id="finalRank">—</div>
+      <div class="rank stars" id="finalRank" aria-label="ほし">★☆☆</div>
+      <div class="best-note" id="finalNewBest" hidden>⭐ いちばんを こうしん！</div>
       <p id="finalDetail">—</p>
       <p id="finalStats" style="font-size:15px;opacity:.95">—</p>
       <button class="btn" id="retryBtn" type="button">🔁 もういちど</button>
@@ -277,6 +285,7 @@
       <li><span class="dot">🕊️</span><span><strong>制限時間なし・罰なし：</strong> 標準モードは制限時間なしで、失敗やゲームオーバーで何かを奪う仕組みはありません。急かされず自分のペースで試行錯誤できることが、幼児期の遊びでは大切だと考えられているためです。60秒モードは、大人が任意で選べるものとしてのみ残しています。</span></li>
       <li><span class="dot">🌸</span><span><strong>過程への称賛：</strong> 区画完了時はスコアだけでなく、取り組んだ過程を褒める言葉と星・花の演出を返します。結果の優劣ではなく「やった過程」に注目する関わりが、挑戦を続ける意欲につながるとされています。減点や罰は入れていません。</span></li>
       <li><span class="dot">💡</span><span><strong>つまずきへの支援：</strong> しばらく操作がないと、近くのまだ刈れていない場所がやさしく光って、次の行動をそっと示します。間違えても責めず、ヒントで支える足場かけの考え方を取り入れています。</span></li>
+      <li><span class="dot">🏆</span><span><strong>大人のための層（任意）：</strong> 「60びょう」モードでは、刈った草の数に花・金の草のボーナスが加わるスコア制に加え、区画を1本も取り残さず100%刈り切ると大きなボーナスが入ります（通常の区画完了とは音と色の演出が異なります）。終了時にはスコアに応じた星1〜3のランクと、そのセッションでのベストスコアが表示されます。子ども向けののんびりモード（制限時間なし・罰なし）はそのまま残してあり、大人が「あと少しでベスト更新」を狙える層だけを上に重ねた二層設計にしています。ベストスコアはページを開いている間だけ保持され、保存はされません。</span></li>
       <li><span class="dot">📖</span><span><strong>根拠と留保：</strong> 数の学習については、数と触れる設計のボードゲームで数の大小や数える力の改善が報告された研究（Ramani &amp; Siegler, 2008）などを参考にしています。ただし「ゲーム全般で頭が良くなる」といった広い効果は実証されておらず、効果が確認されているのは特定の内容と設計の組み合わせに限られます。このゲームも、遊びながら数に親しむきっかけの一つとして位置づけています。</span></li>
     </ul>
   </section>
@@ -318,6 +327,7 @@
   var pauseOverlay = document.getElementById('pauseOverlay');
   var finalScore = document.getElementById('finalScore');
   var finalRank  = document.getElementById('finalRank');
+  var finalNewBest = document.getElementById('finalNewBest');
   var finalDetail= document.getElementById('finalDetail');
   var finalStats = document.getElementById('finalStats');
   var countPop = document.getElementById('countPop');
@@ -347,6 +357,8 @@
   var floaters = [];   // スコア表示
   var mower = { x: W/2, y: H/2, r: 30, angle: -Math.PI/2, speed: 300, moving:false };
   var score = 0, best = 0;
+  var bestTimed = 0;       // 大人層：60びょうモードのセッション内ベスト（メモリ内のみ保持）
+  var perfectCount = 0;    // 大人層：このセッションで「とりのこし なし」にした区画数
   var round = 1;
   var timeLeft = GAME_TIME;
   var cutCount = 0, totalCuttable = 0, flowerCount = 0;
@@ -403,6 +415,8 @@
   function goldSound(){ tone(1174, .1, 'triangle', .14); tone(1568, .18, 'triangle', .12, .06); }
   // 区画完了の確定音（DING型）― 完了の瞬間にだけ鳴らして価値を守る
   function dingSound(){ tone(1567.98, .16, 'sine', .16); tone(2093, .34, 'sine', .12, .07); }
+  // 大人層：「とりのこし なし」専用の音。通常完了より高く、音階を駆け上がる
+  function perfectSound(){ [1046.50, 1318.51, 1567.98, 2093.00].forEach(function(f,i){ tone(f,.18,'triangle',.15,i*.06); }); tone(2637, .3, 'sine', .10, .26); }
   function levelUpSound(){ [659, 784, 1046].forEach(function(f,i){ tone(f,.14,'triangle',.13,i*.07); }); }
   function roundClearSound(){ [523,659,784,1046].forEach(function(f,i){ tone(f,.16,'triangle',.14,i*.09); }); }
   function endSound(){ [784,659,523,392].forEach(function(f,i){ tone(f,.22,'triangle',.13,i*.13); }); }
@@ -497,14 +511,23 @@
         }
       }
     }
-    // 区画完了フラッシュ
+    // 区画完了フラッシュ（通常＝淡い黄／とりのこし なし＝濃い金＋金の枠で区別）
     for(var f = zoneFlashes.length - 1; f >= 0; f--){
       var zf = zoneFlashes[f];
       zf.life -= 0.016;
       if(zf.life <= 0){ zoneFlashes.splice(f, 1); continue; }
       var zw = W / ZONE_COLS, zh = H / ZONE_ROWS;
-      ctx.fillStyle = 'rgba(255,240,160,' + (0.35 * zf.life) + ')';
-      ctx.fillRect((zf.zone % ZONE_COLS) * zw, Math.floor(zf.zone / ZONE_COLS) * zh, zw, zh);
+      var zx2 = (zf.zone % ZONE_COLS) * zw, zy2 = Math.floor(zf.zone / ZONE_COLS) * zh;
+      if(zf.perfect){
+        ctx.fillStyle = 'rgba(255,201,20,' + (0.5 * zf.life) + ')';
+        ctx.fillRect(zx2, zy2, zw, zh);
+        ctx.strokeStyle = 'rgba(255,225,77,' + (0.95 * zf.life) + ')';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(zx2 + 3, zy2 + 3, zw - 6, zh - 6);
+      } else {
+        ctx.fillStyle = 'rgba(255,240,160,' + (0.35 * zf.life) + ')';
+        ctx.fillRect(zx2, zy2, zw, zh);
+      }
     }
     // 地面に残る刈り草（permanence：通った道の地図になる）
     for(var k = clippings.length - 1; k >= 0; k--){
@@ -765,21 +788,35 @@
   function zoneComplete(z){
     z.done = true;
     zonesDone++; totalZonesDone++;
-    var bonus = 50 + round * 10;
-    score += bonus;
     var zw = W / ZONE_COLS, zh = H / ZONE_ROWS;
-    floaters.push({
-      x: (z.idx % ZONE_COLS) * zw + zw / 2, y: Math.floor(z.idx / ZONE_COLS) * zh + zh / 2,
-      text: '⭐ +' + bonus, color: '#fff3a0', size: 24, life: 1.2
-    });
-    zoneFlashes.push({ zone: z.idx, life: 1 });
-    hitstop = Math.max(hitstop, 0.09); // 完了の瞬間だけの小さな止め
-    dingSound();
-    // ごほうび演出：星と花びらが区画の真ん中から広がる
     var zx = (z.idx % ZONE_COLS) * zw + zw / 2, zy = Math.floor(z.idx / ZONE_COLS) * zh + zh / 2;
-    var starColors = ['#ffd94d', '#ffb7cd', '#fff3a0', '#ff8fb2'];
-    for(var si = 0; si < 12; si++){
-      var sa = (si / 12) * Math.PI * 2;
+    // 大人層（60びょうモードのみ）：区画を100%刈り切った＝「とりのこし なし」。
+    // この関数は区画の草を最後の1本まで刈ったときだけ呼ばれる（全体95%での面クリアとは別判定）ため、
+    // ここに来た時点で取り残しゼロが保証される。通常の区画ボーナスに上乗せして加算する。
+    var isPerfect = (mode === 'timed') && z.total > 0 && z.cut >= z.total;
+    var bonus, floaterText, floaterColor, floaterSize;
+    if(isPerfect){
+      perfectCount++;
+      bonus = (50 + round * 10) + (150 + round * 20); // 通常の区画ぶん＋とりのこし なし ぶん
+      floaterText = 'とりのこし なし！ +' + bonus;
+      floaterColor = '#ffe14d'; floaterSize = 27;
+      zoneFlashes.push({ zone: z.idx, life: 1, perfect: true });
+      perfectSound();
+    } else {
+      bonus = 50 + round * 10;
+      floaterText = '⭐ +' + bonus;
+      floaterColor = '#fff3a0'; floaterSize = 24;
+      zoneFlashes.push({ zone: z.idx, life: 1, perfect: false });
+      dingSound();
+    }
+    score += bonus;
+    floaters.push({ x: zx, y: zy, text: floaterText, color: floaterColor, size: floaterSize, life: 1.2 });
+    hitstop = Math.max(hitstop, isPerfect ? 0.13 : 0.09); // 完了の瞬間だけの小さな止め
+    // ごほうび演出：星と花びらが区画の真ん中から広がる（とりのこし なし は金だけ・多め）
+    var starColors = isPerfect ? ['#ffd94d', '#ffe97a', '#fff3a0', '#e8a812'] : ['#ffd94d', '#ffb7cd', '#fff3a0', '#ff8fb2'];
+    var starN = isPerfect ? 20 : 12;
+    for(var si = 0; si < starN; si++){
+      var sa = (si / starN) * Math.PI * 2;
       particles.push({
         x: zx, y: zy,
         vx: Math.cos(sa) * (70 + Math.random() * 90), vy: Math.sin(sa) * (70 + Math.random() * 90) - 40,
@@ -787,16 +824,18 @@
         color: starColors[si % starColors.length], shape: 'star'
       });
     }
-    showCountPop(z);
+    showCountPop(z, isPerfect, bonus);
+    updateHud();
   }
 
   // 区画完了の数え上げ：完了した区画数を大きな数字で1つずつ数え、
   // その区画で刈った草の本数も大きく見せる（数への関心への接続）
-  function showCountPop(z){
+  function showCountPop(z, isPerfect, bonus){
     countTimers.forEach(function(t){ clearTimeout(t); });
     countTimers = [];
     countPop.hidden = false;
-    countPraise.textContent = PRAISES[(zonesDone - 1) % PRAISES.length];
+    countPop.classList.toggle('perfect', !!isPerfect);
+    countPraise.textContent = isPerfect ? 'とりのこし なし！' : PRAISES[(zonesDone - 1) % PRAISES.length];
     countSub.textContent = '';
     countStars.textContent = '';
     var target = zonesDone;
@@ -812,8 +851,8 @@
       if(n < target){
         countTimers.push(setTimeout(step, 330));
       } else {
-        countSub.textContent = 'くさ ' + z.total + ' こ';
-        countTimers.push(setTimeout(function(){ countPop.hidden = true; }, 1500));
+        countSub.textContent = isPerfect ? ('くさ ' + z.total + ' こ　+' + bonus) : ('くさ ' + z.total + ' こ');
+        countTimers.push(setTimeout(function(){ countPop.hidden = true; countPop.classList.remove('perfect'); }, 1500));
       }
     }
     step();
@@ -822,6 +861,7 @@
     countTimers.forEach(function(t){ clearTimeout(t); });
     countTimers = [];
     countPop.hidden = true;
+    countPop.classList.remove('perfect');
   }
 
   function checkLevelUp(){
@@ -1003,7 +1043,7 @@
     ensureAudio();
     mode = newMode === 'zen' ? 'zen' : 'timed';
     score = 0; round = 1; timeLeft = GAME_TIME; elapsed = 0;
-    maxCombo = 0; totalZonesDone = 0; totalCutAll = 0;
+    maxCombo = 0; totalZonesDone = 0; totalCutAll = 0; perfectCount = 0;
     lastActive = 0;
     hideCountPop();
     buildField();
@@ -1016,21 +1056,18 @@
   }
   function gameOver(){
     state = 'over';
-    if(score > best) best = score;
     endSound();
     finalScore.textContent = score.toLocaleString('ja-JP');
-    var rank, msg;
-    if(score >= 6000){ rank = '🏆 すごい！'; }
-    else if(score >= 4000){ rank = '🥇 すごい！'; }
-    else if(score >= 2500){ rank = '🥈 やったね！'; }
-    else if(score >= 1200){ rank = '🥉 やったね！'; }
-    else { rank = '🌱 がんばったね！'; }
-    finalRank.textContent = rank;
-    msg = '🌸 ' + flowerCount + '　🌿 ' + round;
-    if(best > score) msg += '　⭐ ' + best.toLocaleString('ja-JP');
-    else if(score > 0) msg += '　⭐ すごい！';
-    finalDetail.textContent = msg;
-    finalStats.textContent = '🔥 ' + maxCombo + '　⭐ ' + totalZonesDone + '　🌿 ' + totalCutAll;
+    // 大人層：ほしランクはスコア帯で1〜3（1800未満＝1、1800以上＝2、3500以上＝3）。文字でなく星で表す
+    var starCount = score >= 3500 ? 3 : (score >= 1800 ? 2 : 1);
+    finalRank.textContent = new Array(starCount + 1).join('★') + new Array(3 - starCount + 1).join('☆');
+    // 大人層：セッション内ベスト（このページを開いている間の最高スコア。保存はしない）
+    var isNewBest = score > bestTimed && score > 0;
+    if(isNewBest) bestTimed = score;
+    if(score > best) best = score;
+    finalNewBest.hidden = !isNewBest;
+    finalDetail.textContent = '⭐ いちばん ' + bestTimed.toLocaleString('ja-JP') + '　🌸 ' + flowerCount + '　🌿 ' + round;
+    finalStats.textContent = '🔥 ' + maxCombo + '　⭐ とりのこし なし ' + perfectCount + '　🌿 ' + totalCutAll;
     endOverlay.hidden = false;
     document.getElementById('mainBtn').textContent = '▶ はじめる';
     updateHud();

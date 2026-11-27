@@ -347,6 +347,24 @@
       .result .rolls-line svg { width: 28px; height: 28px; }
       .hidden { display: none !important; }
 
+      /* ===== Choice mode (adult layer) ===== */
+      .start-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+      .big-btn.sub {
+        background: var(--panel);
+        color: var(--accent-dark);
+        border: 3px solid var(--accent);
+        box-shadow: 0 6px 0 var(--cell-line), var(--shadow);
+      }
+      .hud-par { font-size: 13px; font-weight: 800; color: var(--ink-soft); line-height: 1.1; }
+      .choice-area { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+      .choice-info { display: flex; gap: 18px; font-size: 20px; font-weight: 800; color: var(--ink-soft); }
+      .dice-pair { display: flex; gap: 18px; }
+      .die.small { width: 104px; height: 104px; padding: 16px; border-radius: 22px; }
+      .die.small.pick { box-shadow: 0 8px 0 #cfd8d2, 0 0 0 4px var(--goal-line), var(--shadow); }
+      .die.small:disabled { opacity: 0.35; filter: grayscale(0.7); }
+      .result .stars.rank svg { width: 46px; height: 46px; }
+      .result .best-line { font-size: 21px; font-weight: 800; color: var(--ink-soft); margin-bottom: 12px; }
+
       /* ===== For parents ===== */
       .parents {
         margin-top: 44px;
@@ -452,6 +470,7 @@
         <div class="hud-side">
           <svg class="die-mini"><use href="#ic-die" /></svg>
           <span class="rolls" id="rollCount">0</span>
+          <span class="hud-par hidden" id="hudPar">めあて 9</span>
         </div>
       </div>
 
@@ -471,7 +490,22 @@
 
       <!-- Controls (fixed min-height) -->
       <div class="controls">
-        <button class="big-btn" id="startBtn" type="button">はじめる</button>
+        <div class="start-area" id="startArea">
+          <button class="big-btn" id="startBtn" type="button">はじめる</button>
+          <button class="big-btn sub" id="choiceStartBtn" type="button">えらべる すごろく</button>
+        </div>
+
+        <div class="choice-area hidden" id="choiceArea">
+          <div class="choice-info">
+            <span>めあて <span id="parNum">9</span>かい</span>
+            <span>きろく <span id="bestNum">なし</span></span>
+          </div>
+          <button class="big-btn hidden" id="rollBtn" type="button">ふる</button>
+          <div class="dice-pair hidden" id="dicePair">
+            <button class="die small" id="dieA" type="button" aria-label="さいころ 1"></button>
+            <button class="die small" id="dieB" type="button" aria-label="さいころ 2"></button>
+          </div>
+        </div>
 
         <button class="die hidden" id="die" type="button" aria-label="さいころ">
           <span class="pip" data-i="0"></span><span class="pip" data-i="1"></span><span class="pip" data-i="2"></span>
@@ -486,6 +520,7 @@
             <svg><use href="#ic-die" /></svg>
             <span id="finalRolls">0</span>
           </div>
+          <div class="best-line hidden" id="bestLine"></div>
           <button class="big-btn" id="againBtn" type="button">もういちど</button>
         </div>
       </div>
@@ -506,6 +541,7 @@
         <h3>このゲームの設計</h3>
         <ul>
           <li>サイコロの目は1〜3に絞り、5歳前後でも数えやすい範囲にしています。</li>
+          <li>「えらべる すごろく」モードでは、2つのサイコロから進む目を自分で選び、ゴールにはぴったり止まる必要があります。「どちらで進めばゴールに合うか」を先読みして選ぶ、小さな戦略の経験になります。目標回数（パー）との比較による星ランクと最少回数の記録は、年長のお子さんや大人が「あと1回少なく」を目指すための仕掛けで、通常モードの遊びには影響しません。</li>
           <li>コマは出た目の数だけ1マスずつ進み、止まるたびに今いるマスの数字が大きく表示され、音も1段ずつ上がります。「1つ進むごとに数が1つ増える」ことを、目と耳で追えるようにしています。</li>
           <li>後退や罰のイベントはなく、制限時間もありません。ゴールに届かない・間違えるといった失敗が起きない設計です。</li>
           <li>途中のマスの絵（花・星・ハート）は飾りとして小さく置き、数字の読み取りを邪魔しないようにしています。</li>
@@ -537,13 +573,41 @@
         var againBtn = document.getElementById("againBtn");
         var confettiEl = document.getElementById("confetti");
         var pips = dieEl.querySelectorAll(".pip");
+        var startArea = document.getElementById("startArea");
+        var choiceStartBtn = document.getElementById("choiceStartBtn");
+        var choiceArea = document.getElementById("choiceArea");
+        var rollBtn = document.getElementById("rollBtn");
+        var dicePair = document.getElementById("dicePair");
+        var dieAEl = document.getElementById("dieA");
+        var dieBEl = document.getElementById("dieB");
+        var parNumEl = document.getElementById("parNum");
+        var bestNumEl = document.getElementById("bestNum");
+        var bestLineEl = document.getElementById("bestLine");
+        var hudParEl = document.getElementById("hudPar");
+
+        function buildPips(el) {
+          var arr = [];
+          for (var i = 0; i < 9; i++) {
+            var s = document.createElement("span");
+            s.className = "pip";
+            el.appendChild(s);
+            arr.push(s);
+          }
+          return arr;
+        }
+        var pipsA = buildPips(dieAEl);
+        var pipsB = buildPips(dieBEl);
 
         var decos = { 3: "ic-flower", 6: "ic-star", 9: "ic-heart", 12: "ic-flower", 15: "ic-star", 18: "ic-heart" };
         var praises = ["すすんだね！", "いいね！", "そのちょうし！", "よくかぞえたね！"];
 
         var pos = 0;        // current square (0 = start pad)
         var rolls = 0;
-        var state = "ready"; // ready | idle | rolling | moving | goal
+        var state = "ready"; // ready | idle | rolling | choosing | moving | goal
+        var mode = "normal"; // normal | choice
+        var PAR = 9;         // target rolls for choice mode
+        var bestChoice = null; // fewest rolls this session (choice mode)
+        var choiceVals = [1, 1];
         var idleTimer = null;
         var audioCtx = null;
 
@@ -630,11 +694,12 @@
 
         /* ---------- dice ---------- */
         var FACES = { 1: [4], 2: [0, 8], 3: [0, 4, 8] };
-        function showFace(v) {
-          for (var i = 0; i < pips.length; i++) {
-            pips[i].classList.toggle("on", FACES[v].indexOf(i) >= 0);
+        function paintFace(list, v) {
+          for (var i = 0; i < list.length; i++) {
+            list[i].classList.toggle("on", FACES[v].indexOf(i) >= 0);
           }
         }
+        function showFace(v) { paintFace(pips, v); }
 
         function setIdleHint(on) {
           dieEl.classList.toggle("idle", on && state === "idle");
@@ -675,15 +740,33 @@
         }
 
         /* ---------- game flow ---------- */
-        function startGame() {
+        function startGame(modeName) {
           ensureAudio();
+          mode = modeName || "normal";
           pos = 0; rolls = 0;
           state = "idle";
-          startBtn.classList.add("hidden");
+          startArea.classList.add("hidden");
           resultEl.classList.remove("show");
-          dieEl.classList.remove("hidden");
-          dieEl.disabled = false;
-          showFace(3);
+          bestLineEl.classList.add("hidden");
+          starsEl.classList.remove("rank");
+          if (mode === "choice") {
+            dieEl.classList.add("hidden");
+            choiceArea.classList.remove("hidden");
+            rollBtn.classList.remove("hidden");
+            dicePair.classList.add("hidden");
+            hudParEl.classList.remove("hidden");
+            hudParEl.textContent = "めあて " + PAR;
+            parNumEl.textContent = PAR;
+            bestNumEl.textContent = bestChoice === null ? "なし" : bestChoice + "かい";
+            paintFace(pipsA, 3);
+            paintFace(pipsB, 3);
+          } else {
+            choiceArea.classList.add("hidden");
+            hudParEl.classList.add("hidden");
+            dieEl.classList.remove("hidden");
+            dieEl.disabled = false;
+            showFace(3);
+          }
           praiseEl.classList.remove("show");
           updateHud(false);
           placePiece(false);
@@ -723,6 +806,7 @@
               if (pos >= GOAL) { goal(); return; }
               state = "idle";
               dieEl.disabled = false;
+              if (mode === "choice") rollBtn.classList.remove("hidden");
               showPraise(praises[Math.floor(Math.random() * praises.length)], false);
               armIdleTimer();
               return;
@@ -749,12 +833,92 @@
           goalSound();
           showPraise("やったね！", true);
           dieEl.classList.add("hidden");
+          choiceArea.classList.add("hidden");
           finalRollsEl.textContent = rolls;
-          var starHtml = "";
-          for (var i = 0; i < rolls; i++) starHtml += '<svg><use href="#ic-star"/></svg>';
-          starsEl.innerHTML = starHtml;
+          if (mode === "choice") {
+            var rank = rolls <= PAR - 1 ? 3 : rolls <= PAR + 2 ? 2 : 1;
+            var rankHtml = "";
+            for (var i = 0; i < rank; i++) rankHtml += '<svg><use href="#ic-star"/></svg>';
+            starsEl.innerHTML = rankHtml;
+            starsEl.classList.add("rank");
+            if (bestChoice === null || rolls < bestChoice) bestChoice = rolls;
+            bestLineEl.textContent = "めあて " + PAR + "かい ・ きろく " + bestChoice + "かい";
+            bestLineEl.classList.remove("hidden");
+          } else {
+            var starHtml = "";
+            for (var j = 0; j < rolls; j++) starHtml += '<svg><use href="#ic-star"/></svg>';
+            starsEl.innerHTML = starHtml;
+          }
           resultEl.classList.add("show");
           launchConfetti();
+        }
+
+        /* ---------- choice mode: roll two dice, pick one ---------- */
+        function rollChoice() {
+          if (state !== "idle" || mode !== "choice") return;
+          ensureAudio();
+          state = "rolling";
+          clearTimeout(idleTimer);
+          rollBtn.classList.add("hidden");
+          dicePair.classList.remove("hidden");
+          dieAEl.disabled = true;
+          dieBEl.disabled = true;
+          dieAEl.classList.remove("pick");
+          dieBEl.classList.remove("pick");
+          dieAEl.classList.add("rolling");
+          dieBEl.classList.add("rolling");
+          rollSound();
+          var ticks = 0;
+          var iv = setInterval(function () {
+            paintFace(pipsA, 1 + Math.floor(Math.random() * 3));
+            paintFace(pipsB, 1 + Math.floor(Math.random() * 3));
+            ticks++;
+            if (ticks >= 7) {
+              clearInterval(iv);
+              choiceVals = [1 + Math.floor(Math.random() * 3), 1 + Math.floor(Math.random() * 3)];
+              paintFace(pipsA, choiceVals[0]);
+              paintFace(pipsB, choiceVals[1]);
+              dieAEl.classList.remove("rolling");
+              dieBEl.classList.remove("rolling");
+              rolls++;
+              updateHud(false);
+              enterChoose();
+            }
+          }, 85);
+        }
+
+        function setupDie(el, can) {
+          el.disabled = !can;
+          el.classList.toggle("pick", can);
+        }
+
+        function enterChoose() {
+          state = "choosing";
+          var canA = pos + choiceVals[0] <= GOAL;
+          var canB = pos + choiceVals[1] <= GOAL;
+          setupDie(dieAEl, canA);
+          setupDie(dieBEl, canB);
+          if (!canA && !canB) {
+            // neither die lands exactly: show why, then let the player roll again
+            showPraise("ぴったりじゃ ないね", false);
+            setTimeout(function () {
+              if (state !== "choosing") return;
+              state = "idle";
+              dicePair.classList.add("hidden");
+              rollBtn.classList.remove("hidden");
+            }, 1500);
+          } else {
+            showPraise("どっちに する？", false);
+          }
+        }
+
+        function chooseDie(idx) {
+          if (state !== "choosing") return;
+          var v = choiceVals[idx];
+          if (pos + v > GOAL) return; // must land exactly on the goal
+          state = "moving";
+          dicePair.classList.add("hidden");
+          moveSteps(v);
         }
 
         function launchConfetti() {
@@ -776,12 +940,16 @@
         }
 
         /* ---------- events ---------- */
-        startBtn.addEventListener("click", startGame);
+        startBtn.addEventListener("click", function () { startGame("normal"); });
+        choiceStartBtn.addEventListener("click", function () { startGame("choice"); });
         againBtn.addEventListener("click", function () {
           praiseEl.classList.remove("show");
-          startGame();
+          startGame(mode);
         });
         dieEl.addEventListener("click", roll);
+        rollBtn.addEventListener("click", rollChoice);
+        dieAEl.addEventListener("click", function () { chooseDie(0); });
+        dieBEl.addEventListener("click", function () { chooseDie(1); });
         window.addEventListener("resize", function () { placePiece(false); });
         window.addEventListener("load", function () { placePiece(false); });
 

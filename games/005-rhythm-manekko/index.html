@@ -121,6 +121,18 @@
         border-color: var(--accent);
         box-shadow: 0 0 0 3px rgba(46, 158, 91, 0.25);
       }
+      /* えんどれす：のこりの ミスできる かず */
+      .rounds .dot.life {
+        width: 19px; height: 19px;
+        background: var(--gold);
+        border-color: var(--gold);
+      }
+      .rounds .dot.life.lost {
+        background: transparent;
+        border-color: var(--line);
+        opacity: 0.45;
+        transform: none;
+      }
       .steps {
         margin-top: 8px;
         height: 18px;
@@ -248,6 +260,13 @@
       .result .big { font-size: 34px; font-weight: 800; margin: 4px 0; }
       .result .stars { font-size: 40px; letter-spacing: 4px; margin: 8px 0 2px; min-height: 48px; }
       .result .stars .off { opacity: 0.22; filter: grayscale(1); }
+      .result .detail {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.75;
+        margin-top: 4px;
+      }
+      .result .detail .newbest { color: var(--accent); }
 
       /* 紙吹雪 */
       .confetti {
@@ -330,12 +349,14 @@
 
       <div class="controls">
         <button class="btn btn-main" id="btnStart">はじめる</button>
+        <button class="btn btn-sub" id="btnEndless">えんどれす</button>
         <button class="btn btn-sub" id="btnListen" hidden>👂 もういちど きく</button>
       </div>
 
       <div class="result" id="result" hidden>
-        <div class="big">やったね！</div>
+        <div class="big" id="resultBig">やったね！</div>
         <div class="stars" id="stars"></div>
+        <div class="detail" id="endlessDetail" hidden></div>
       </div>
 
       <!-- 保護者向け（通常の日本語） -->
@@ -359,6 +380,7 @@
           <li><strong>罰なし・ゲームオーバーなし</strong>：間違えても、順番が自動でもう一度再生されて再挑戦できます。制限時間もありません。</li>
           <li><strong>つまずきへの支援</strong>：自分の番で約7秒操作がないと、次に押すパッドがそっと光ってヒントになります。</li>
           <li><strong>段階づけ</strong>：2音から始め、ラウンドごとに少しずつ長くすることで、「できた」という経験を積み重ねられるようにしています。</li>
+          <li><strong>大人のための「エンドレス」モード（二層設計）</strong>：通常モードの入口（聞いて真似るだけ・聞き直し自由）はそのままに、大人向けの挑戦として、順番の長さと再生速度が上がり続けるエンドレスモードを用意しました。ミスは3回まで許容され、終了時に到達した最長（何音まで再現できたか）とラウンド数、そのセッション内でのベストが表示されます。「何音まで行けるか」に挑む大人の達成感と、子どもの遊びの優しさを分けずに重ねる設計です。</li>
         </ul>
 
         <h3>効果についての留保</h3>
@@ -429,11 +451,17 @@
         var LENGTHS = [2, 2, 3, 3, 4, 4, 5, 6];
         var PRAISE = ["やったね！", "すごい！", "できたね！", "じょうず！", "ぴったり！"];
         var state = "idle"; // idle | showing | input | between | done
+        var mode = "normal"; // normal | endless
         var round = 0;
         var sequence = [];
         var inputPos = 0;
         var mistakesThisRound = 0;
         var stars = 0;
+        // えんどれす用：ミスは3回まで、記録はこのセッション内のみ
+        var lives = 3;
+        var endlessMaxLen = 0;   // こなせた いちばん ながい じゅんばん
+        var bestLen = 0;         // セッション内ベスト（最長）
+        var bestRounds = 0;      // セッション内ベスト（ラウンド数）
         var hintTimer = null;
         var timers = [];
 
@@ -444,9 +472,12 @@
         var padsEl = document.getElementById("pads");
         var padEls = Array.prototype.slice.call(document.querySelectorAll(".pad"));
         var btnStart = document.getElementById("btnStart");
+        var btnEndless = document.getElementById("btnEndless");
         var btnListen = document.getElementById("btnListen");
         var resultEl = document.getElementById("result");
+        var resultBigEl = document.getElementById("resultBig");
         var starsEl = document.getElementById("stars");
+        var endlessDetailEl = document.getElementById("endlessDetail");
         var confettiEl = document.getElementById("confetti");
 
         function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
@@ -464,6 +495,15 @@
         }
         function renderRounds() {
           roundsEl.innerHTML = "";
+          if (mode === "endless" && state !== "idle") {
+            // えんどれす：のこりの ミスできる かずを ドットで
+            for (var j = 0; j < 3; j++) {
+              var ld = document.createElement("span");
+              ld.className = "dot life" + (j < lives ? "" : " lost");
+              roundsEl.appendChild(ld);
+            }
+            return;
+          }
           for (var i = 0; i < LENGTHS.length; i++) {
             var d = document.createElement("span");
             d.className = "dot" + (i < round ? " done" : (i === round && state !== "idle" && state !== "done" ? " now" : ""));
@@ -518,6 +558,11 @@
           setStatus('<span class="ear">👂</span>きいてね');
           renderRounds(); renderSteps();
           var stepMs = 780, onDelay = 650;
+          if (mode === "endless") {
+            // ラウンドごとに すこしずつ はやく（下限つき）
+            stepMs = Math.max(360, 780 - round * 50);
+            onDelay = Math.max(420, 650 - round * 30);
+          }
           sequence.forEach(function (padIdx, k) {
             later(function () { lightPad(padIdx, true); }, onDelay + k * stepMs);
           });
@@ -532,7 +577,8 @@
         }
 
         function startRound() {
-          var len = LENGTHS[round];
+          // えんどれすは 2おんから 1ずつ ふえつづける
+          var len = mode === "endless" ? round + 2 : LENGTHS[round];
           sequence = [];
           for (var i = 0; i < len; i++) sequence.push(Math.floor(Math.random() * 4));
           mistakesThisRound = 0;
@@ -544,13 +590,14 @@
           stopHintTimer(); clearHint();
           btnListen.hidden = true;
           padsEl.classList.add("locked");
-          if (mistakesThisRound === 0) stars++;
+          if (mode === "normal" && mistakesThisRound === 0) stars++;
+          if (mode === "endless" && sequence.length > endlessMaxLen) endlessMaxLen = sequence.length;
           playFanfare();
           setStatus(PRAISE[Math.floor(Math.random() * PRAISE.length)] + " ⭐", true);
           round++;
           renderRounds(); renderSteps();
           later(function () {
-            if (round >= LENGTHS.length) finishAll();
+            if (mode === "normal" && round >= LENGTHS.length) finishAll();
             else startRound();
           }, 1500);
         }
@@ -566,11 +613,46 @@
             html += '<span class="' + (i < stars ? "" : "off") + '">⭐</span>';
           }
           starsEl.innerHTML = html;
+          starsEl.style.display = "";
+          resultBigEl.textContent = "やったね！";
+          endlessDetailEl.hidden = true;
           resultEl.hidden = false;
           btnStart.textContent = "もういちど";
           btnStart.hidden = false;
+          btnEndless.textContent = "えんどれす";
+          btnEndless.hidden = false;
           playFanfare();
           spawnConfetti();
+        }
+
+        function finishEndless() {
+          state = "done";
+          stopHintTimer(); clearHint();
+          btnListen.hidden = true;
+          padsEl.classList.remove("locked");
+          padsEl.classList.add("idle");
+          setStatus("おしまい！", true);
+          renderRounds(); renderSteps();
+          var roundsCleared = round;
+          var isBest = endlessMaxLen > bestLen ||
+            (endlessMaxLen === bestLen && roundsCleared > bestRounds);
+          if (isBest) { bestLen = endlessMaxLen; bestRounds = roundsCleared; }
+          starsEl.innerHTML = "";
+          starsEl.style.display = "none";
+          resultBigEl.textContent = "おつかれさま！";
+          var html = "さいちょう " + endlessMaxLen + " おん<br>" +
+            roundsCleared + " らうんど<br>" +
+            "べすと " + bestLen + " おん";
+          if (isBest && endlessMaxLen > 0) html += '<br><span class="newbest">べすと こうしん！</span>';
+          endlessDetailEl.innerHTML = html;
+          endlessDetailEl.hidden = false;
+          resultEl.hidden = false;
+          btnStart.textContent = "はじめる";
+          btnStart.hidden = false;
+          btnEndless.textContent = "もういちど";
+          btnEndless.hidden = false;
+          playFanfare();
+          if (roundsCleared >= 3) spawnConfetti();
         }
 
         function spawnConfetti() {
@@ -604,6 +686,23 @@
               } else {
                 armHintTimer();
               }
+            } else if (mode === "endless") {
+              // えんどれす：ミスは3回まで。のこりは上のドットで見える
+              mistakesThisRound++;
+              lives--;
+              p.classList.remove("shake");
+              void p.offsetWidth;
+              p.classList.add("shake");
+              playSoftMiss();
+              state = "between";
+              renderRounds();
+              if (lives <= 0) {
+                setStatus("おしまい");
+                later(finishEndless, 1000);
+              } else {
+                setStatus("あと " + lives + " かい");
+                later(playSequence, 1200);
+              }
             } else {
               // まちがえても罰なし：やさしく知らせて、もう一度再生
               mistakesThisRound++;
@@ -622,9 +721,21 @@
         btnStart.addEventListener("click", function () {
           ensureAudio();
           clearTimers();
+          mode = "normal";
           round = 0; stars = 0;
           resultEl.hidden = true;
           btnStart.hidden = true;
+          btnEndless.hidden = true;
+          startRound();
+        });
+        btnEndless.addEventListener("click", function () {
+          ensureAudio();
+          clearTimers();
+          mode = "endless";
+          round = 0; lives = 3; endlessMaxLen = 0;
+          resultEl.hidden = true;
+          btnStart.hidden = true;
+          btnEndless.hidden = true;
           startRound();
         });
         btnListen.addEventListener("click", function () {

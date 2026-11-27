@@ -120,6 +120,24 @@
       }
       .dots i.on { background: var(--accent); }
 
+      /* 大人モード（60びょう）のHUD：ドットと入れ替えで高さは同じ64px */
+      .adult-hud { display: flex; align-items: center; gap: 10px; }
+      .adult-hud[hidden] { display: none; }
+      .timer { display: flex; align-items: baseline; gap: 3px; }
+      .timer .t-num {
+        font-size: 40px; font-weight: 800; line-height: 1;
+        min-width: 52px; text-align: right;
+      }
+      .timer .t-lbl { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+      .timer.low .t-num { color: #e8382f; animation: numpop .5s ease infinite; }
+      .mult-pill {
+        font-size: 20px; font-weight: 800; color: #fff;
+        background: var(--accent); border-radius: 999px;
+        padding: 5px 14px; white-space: nowrap;
+      }
+      .mult-pill small { font-size: 13px; font-weight: 700; }
+      .mult-pill.bump { animation: numpop .45s ease; }
+
       .sample-zone {
         height: 196px;
         display: flex;
@@ -134,10 +152,23 @@
         letter-spacing: .14em;
         margin: 2px 0 4px;
       }
+      .sample-lbl.neg { color: #e8382f; letter-spacing: .02em; }
       .sample-box {
+        position: relative;
         width: 132px; height: 132px;
         display: flex; align-items: center; justify-content: center;
       }
+      /* 否定条件の×印：おてほんの右上に重ねるだけ（レイアウトは動かない） */
+      .neg-mark {
+        position: absolute; top: -12px; right: -14px;
+        width: 52px; height: 52px; border-radius: 50%;
+        background: #e8382f; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 34px; font-weight: 800; line-height: 1;
+        border: 4px solid var(--card);
+        box-shadow: 0 4px 10px rgba(0,0,0,.18);
+      }
+      .neg-mark[hidden] { display: none; }
       .sample-box svg { width: 124px; height: 124px; display: block; }
       .sample-box.pop-in { animation: popin .35s ease; }
       @keyframes popin {
@@ -238,6 +269,32 @@
         touch-action: manipulation;
       }
       .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-deep); }
+      .big-btn.sub {
+        background: var(--card);
+        color: var(--accent-deep);
+        border: 3px solid var(--accent);
+        box-shadow: 0 6px 0 var(--card-edge);
+        font-size: 22px;
+        padding: 12px 36px;
+        min-height: 56px;
+      }
+      .big-btn.sub:active { box-shadow: 0 2px 0 var(--card-edge); }
+      .start-btns { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+      .start-note { font-size: 15px; font-weight: 700; color: var(--ink-soft); margin: 0; }
+      .quit-btn {
+        position: absolute; top: 12px; right: 12px; z-index: 4;
+        appearance: none; border: 2px solid var(--card-edge);
+        background: var(--card); color: var(--ink-soft);
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        border-radius: 999px; padding: 4px 14px; cursor: pointer;
+      }
+      .quit-btn[hidden] { display: none; }
+      .result-score { font-size: 22px; font-weight: 700; color: var(--ink-soft); margin: 0; }
+      .result-score b { font-size: 52px; color: var(--ink); line-height: 1; }
+      .result-lines { display: flex; flex-direction: column; gap: 4px; }
+      .result-lines p { margin: 0; font-size: 19px; font-weight: 700; color: var(--ink-soft); }
+      .result-lines b { font-size: 26px; color: var(--ink); }
+      .result-btns { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 
       .overlay {
         position: absolute;
@@ -295,6 +352,9 @@
       @media (max-width: 380px) {
         .title { font-size: 26px; }
         .counter .num { font-size: 40px; min-width: 46px; }
+        .timer .t-num { font-size: 32px; min-width: 42px; }
+        .mult-pill { font-size: 17px; padding: 4px 10px; }
+        .sample-lbl { font-size: 14px; }
         .choice svg { width: 68px; height: 68px; }
         .choices.n3 .choice svg { width: 58px; height: 58px; }
         .choice { min-height: 110px; }
@@ -314,15 +374,24 @@
           <div class="counter">
             <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.8 5.9 6.5.8-4.8 4.4 1.3 6.4L12 17l-5.8 3.1 1.3-6.4L2.7 9.3l6.5-.8z" fill="#f5b800" stroke="#d99a00" stroke-width="1.2" stroke-linejoin="round"/></svg>
             <div class="num" id="countNum">0</div>
-            <div class="lbl">あわせた<br />かず</div>
+            <div class="lbl" id="countLbl">あわせた<br />かず</div>
           </div>
           <div class="dots" id="dots" aria-hidden="true"></div>
+          <div class="adult-hud" id="adultHud" hidden>
+            <div class="mult-pill" id="multPill">×1 <small>ばい</small></div>
+            <div class="timer" id="timerBox">
+              <div class="t-num" id="timeNum">60</div>
+              <div class="t-lbl">びょう</div>
+            </div>
+          </div>
         </div>
 
         <div class="sample-zone">
-          <p class="sample-lbl">おてほん</p>
-          <div class="sample-box" id="sampleBox"></div>
+          <p class="sample-lbl" id="sampleLbl">おてほん</p>
+          <div class="sample-box" id="sampleBox"><span id="sampleArt"></span><span class="neg-mark" id="negMark" hidden aria-hidden="true">×</span></div>
         </div>
+
+        <button class="quit-btn" id="quitBtn" type="button" hidden>おわる</button>
 
         <div class="praise" id="praise" aria-live="polite"></div>
 
@@ -330,7 +399,11 @@
 
         <div class="overlay" id="startOverlay">
           <div class="deco" id="startDeco" aria-hidden="true"></div>
-          <button class="big-btn" id="startBtn" type="button">はじめる</button>
+          <div class="start-btns">
+            <button class="big-btn" id="startBtn" type="button">はじめる</button>
+            <p class="start-note">おとなは こちら</p>
+            <button class="big-btn sub" id="adultBtn" type="button">60びょう</button>
+          </div>
         </div>
 
         <div class="overlay" id="resultOverlay" hidden>
@@ -338,6 +411,20 @@
           <div class="result-stars" id="resultStars" aria-hidden="true"></div>
           <p class="result-count">ほし <b id="resultStarCount">0</b> こ</p>
           <button class="big-btn" id="againBtn" type="button">もういちど</button>
+        </div>
+
+        <div class="overlay" id="adultResultOverlay" hidden>
+          <p class="big-msg">おつかれさま！</p>
+          <p class="result-score"><b id="adultScoreNum">0</b> てん</p>
+          <div class="result-stars" id="adultStars" aria-hidden="true"></div>
+          <div class="result-lines">
+            <p>せいかい <b id="adultCorrectNum">0</b> もん</p>
+            <p>さいこう <b id="adultBestNum">0</b> てん</p>
+          </div>
+          <div class="result-btns">
+            <button class="big-btn" id="adultAgainBtn" type="button">もういちど</button>
+            <button class="big-btn sub" id="adultBackBtn" type="button">もどる</button>
+          </div>
         </div>
       </section>
 
@@ -356,6 +443,9 @@
           <li><strong>そっと光るヒント</strong>：約7秒操作がないと、正解のカードがそっと光ります。答えを教えるのではなく、「自分で見つけた」という感覚を残すための控えめな手がかりです。</li>
           <li><strong>数え上げの表示</strong>：合わせられた数は画面上部に大きな数字で数え上がります。遊びの中で自然に数に触れる機会にもなります。</li>
         </ul>
+
+        <h3>大人の方向け「60秒モード」</h3>
+        <p>スタート画面の「60びょう」からは、大人向けのスコアアタックで遊べます。60秒間に何問正解できるかを競い、連続正解で得点倍率が上がり、間違えると倍率だけが戻ります（時間のペナルティはありません）。後半になると、おてほんに「×」印がついた否定条件の問題（「色だけちがう方」「形だけちがう方」「両方ちがう方」を選ぶ）が混ざり、つい同じものを選びたくなる衝動を抑える力が試されます。子どもの入口（操作・ルール）はそのままに、大人が本気になれる層を重ねた二層設計です。ベストスコアはその回のプレイ中だけ保持され、保存はされません。</p>
 
         <p class="note">※ 効果についての留保：このゲームで期待できるのは、「色や形への親しみ」と「分類の経験」を楽しく積むことです。それ以上の学力効果を保証するものではありません。お子さんが間違えたときは、正解を急がせず、「どこが同じかな？」と一緒に眺める時間そのものが、分類する力の芽を育てます。</p>
       </section>
@@ -475,12 +565,22 @@
         /* ---------- 状態 ---------- */
         var gameEl = document.getElementById("game");
         var sampleBox = document.getElementById("sampleBox");
+        var sampleArt = document.getElementById("sampleArt");
+        var sampleLbl = document.getElementById("sampleLbl");
+        var negMark = document.getElementById("negMark");
         var choicesEl = document.getElementById("choices");
         var praiseEl = document.getElementById("praise");
         var countNum = document.getElementById("countNum");
+        var countLbl = document.getElementById("countLbl");
         var dotsEl = document.getElementById("dots");
         var startOverlay = document.getElementById("startOverlay");
         var resultOverlay = document.getElementById("resultOverlay");
+        var adultResultOverlay = document.getElementById("adultResultOverlay");
+        var adultHud = document.getElementById("adultHud");
+        var multPill = document.getElementById("multPill");
+        var timerBox = document.getElementById("timerBox");
+        var timeNum = document.getElementById("timeNum");
+        var quitBtn = document.getElementById("quitBtn");
 
         var qIndex = 0;       // 今の問題番号 0..9
         var matched = 0;      // 合わせた数
@@ -490,6 +590,17 @@
         var locked = false;
         var current = null;   // {color, shape, mode, correctBtn}
         var idleTimer = null;
+
+        /* 大人モード（60びょう）の状態 */
+        var gameMode = "child";   // "child" | "adult"
+        var aScore = 0;           // スコア
+        var aCorrect = 0;         // 正解数
+        var aStreak = 0;          // 連続正解（一発正解のみ数える）
+        var aBest = 0;            // セッション内ベスト（保存しない）
+        var aTimeLeft = 60;       // 残り秒数
+        var aTimerId = null;
+        var aDeadline = 0;
+        var aNextTimer = null;    // 正解後の次問タイマー
 
         for (var d = 0; d < TOTAL; d++) {
           var dot = document.createElement("i");
@@ -510,6 +621,7 @@
         }
         function armHint() {
           if (idleTimer) clearTimeout(idleTimer);
+          if (gameMode === "adult") return; // 大人モードにヒントはなし
           idleTimer = setTimeout(function () {
             if (current && current.correctBtn && !locked) {
               current.correctBtn.classList.add("hint");
@@ -560,14 +672,95 @@
           return { color: color, shape: shape, mode: mode, options: options };
         }
 
+        /* ---------- 大人モードの問題づくり ---------- */
+        // 連続正解3問ごとに倍率+1（最大×5）。倍率は「次の正解」にかかる値
+        function currentMult() {
+          return Math.min(1 + Math.floor(aStreak / 3), 5);
+        }
+        function updateMultPill(bump) {
+          multPill.innerHTML = "×" + currentMult() + " <small>ばい</small>";
+          if (bump) {
+            multPill.classList.remove("bump");
+            void multPill.offsetWidth;
+            multPill.classList.add("bump");
+          }
+        }
+
+        function makeAdultQuestion() {
+          var color = COLORS[Math.floor(Math.random() * COLORS.length)];
+          var shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+          var elapsed = 60 - aTimeLeft;
+          // 後半（30秒経過）または連続正解5以上で、否定条件が混ざり始める
+          var useNeg = (elapsed >= 30 || aStreak >= 5) && Math.random() < 0.45;
+          var options = [];
+          var seen = {};
+          function addOption(c, s, correct) {
+            var key = c.id + ":" + s.id;
+            if (seen[key]) return false;
+            seen[key] = true;
+            options.push({ color: c, shape: s, correct: !!correct });
+            return true;
+          }
+
+          if (!useNeg) {
+            // 通常問題は常に「色と形の両方」（大人向けの難しさ）
+            addOption(color, shape, true);
+            addOption(color, pick(SHAPES, shape), false);
+            addOption(pick(COLORS, color), shape, false);
+            while (options.length < 4) addOption(pick(COLORS, color), pick(SHAPES, shape), false);
+            shuffle(options);
+            return { color: color, shape: shape, mode: "both", negate: null, options: options };
+          }
+
+          // 否定条件：正解はちょうど1つだけになるよう選択肢を組む
+          var types = ["notColor", "notShape", "notBoth"];
+          var neg = types[Math.floor(Math.random() * types.length)];
+          var otherColor = pick(COLORS, color);
+          var otherShape = pick(SHAPES, shape);
+          if (neg === "notColor") {
+            // 色だけちがう（形は同じ）が正解。残りは形がちがうものだけにする
+            addOption(otherColor, shape, true);
+            addOption(color, shape, false); // おてほんそのもの（ひっかけ）
+            while (options.length < 4) addOption(pick(COLORS), pick(SHAPES, shape), false);
+          } else if (neg === "notShape") {
+            // 形だけちがう（色は同じ）が正解。残りは色がちがうものだけにする
+            addOption(color, otherShape, true);
+            addOption(color, shape, false);
+            while (options.length < 4) addOption(pick(COLORS, color), pick(SHAPES), false);
+          } else {
+            // 両方ちがうが正解
+            addOption(otherColor, otherShape, true);
+            addOption(color, shape, false);
+            addOption(color, otherShape, false);
+            addOption(otherColor, shape, false);
+          }
+          shuffle(options);
+          return { color: color, shape: shape, mode: "both", negate: neg, options: options };
+        }
+
+        var NEG_LABELS = {
+          notColor: "いろだけ ちがうの",
+          notShape: "かたちだけ ちがうの",
+          notBoth: "りょうほう ちがうの"
+        };
+
         function renderQuestion() {
           locked = false;
           mistakeThisQ = false;
           praiseEl.textContent = "";
           praiseEl.classList.remove("show");
-          current = makeQuestion();
+          current = (gameMode === "adult") ? makeAdultQuestion() : makeQuestion();
 
-          sampleBox.innerHTML = shapeSVG(current.shape.id, current.color.fill, 124);
+          sampleArt.innerHTML = shapeSVG(current.shape.id, current.color.fill, 124);
+          if (current.negate) {
+            negMark.hidden = false;
+            sampleLbl.textContent = NEG_LABELS[current.negate];
+            sampleLbl.classList.add("neg");
+          } else {
+            negMark.hidden = true;
+            sampleLbl.textContent = "おてほん";
+            sampleLbl.classList.remove("neg");
+          }
           sampleBox.classList.remove("pop-in", "cheer");
           void sampleBox.offsetWidth;
           sampleBox.classList.add("pop-in");
@@ -643,38 +836,71 @@
         }
 
         /* ---------- 回答 ---------- */
+        function showPraise(text) {
+          praiseEl.textContent = text;
+          praiseEl.classList.remove("show");
+          void praiseEl.offsetWidth;
+          praiseEl.classList.add("show");
+        }
+
         function onChoose(btn, opt) {
           if (locked || btn.classList.contains("out")) return;
+          if (gameMode === "adult" && aTimeLeft <= 0) return;
           ensureAudio();
           clearHint();
           if (opt.correct) {
             locked = true;
-            sndGood(matched);
             btn.classList.add("good");
             burst(btn, false);
             sampleBox.classList.remove("cheer");
             void sampleBox.offsetWidth;
             sampleBox.classList.add("cheer");
-            if (!mistakeThisQ) { starCount++; cleanStreak++; }
-            matched++;
-            countNum.textContent = matched;
-            countNum.classList.remove("pop");
-            void countNum.offsetWidth;
-            countNum.classList.add("pop");
-            if (qIndex < TOTAL) dots[qIndex].classList.add("on");
-            praiseEl.textContent = PRAISES[Math.floor(Math.random() * PRAISES.length)];
-            praiseEl.classList.remove("show");
-            void praiseEl.offsetWidth;
-            praiseEl.classList.add("show");
-            setTimeout(function () {
-              qIndex++;
-              if (qIndex >= TOTAL) finish();
-              else renderQuestion();
-            }, 1150);
+            if (gameMode === "adult") {
+              var gained;
+              if (!mistakeThisQ) {
+                gained = 100 * currentMult();
+                aStreak++;
+              } else {
+                gained = 50; // 一度間違えた問題は半分だけ（倍率はつかない）
+              }
+              aScore += gained;
+              aCorrect++;
+              sndGood(Math.min(aStreak, 12));
+              countNum.textContent = aScore;
+              countNum.classList.remove("pop");
+              void countNum.offsetWidth;
+              countNum.classList.add("pop");
+              updateMultPill(!mistakeThisQ);
+              showPraise("+" + gained + " てん！");
+              aNextTimer = setTimeout(function () {
+                if (gameMode === "adult" && aTimeLeft > 0) renderQuestion();
+              }, 620);
+            } else {
+              sndGood(matched);
+              if (!mistakeThisQ) { starCount++; cleanStreak++; }
+              matched++;
+              countNum.textContent = matched;
+              countNum.classList.remove("pop");
+              void countNum.offsetWidth;
+              countNum.classList.add("pop");
+              if (qIndex < TOTAL) dots[qIndex].classList.add("on");
+              showPraise(PRAISES[Math.floor(Math.random() * PRAISES.length)]);
+              setTimeout(function () {
+                qIndex++;
+                if (qIndex >= TOTAL) finish();
+                else renderQuestion();
+              }, 1150);
+            }
           } else {
             sndWrong();
             mistakeThisQ = true;
-            cleanStreak = 0;
+            if (gameMode === "adult") {
+              // 大人モードのペナルティは倍率リセットだけ（時間は減らない）
+              aStreak = 0;
+              updateMultPill(false);
+            } else {
+              cleanStreak = 0;
+            }
             btn.classList.remove("shake");
             void btn.offsetWidth;
             btn.classList.add("shake");
@@ -700,19 +926,112 @@
         function startGame() {
           ensureAudio();
           sndTap();
+          stopAdultTimer();
+          gameMode = "child";
           qIndex = 0;
           matched = 0;
           starCount = 0;
           cleanStreak = 0;
           countNum.textContent = "0";
+          countLbl.innerHTML = "あわせた<br />かず";
+          dotsEl.style.display = "";
+          adultHud.hidden = true;
+          quitBtn.hidden = true;
           for (var i = 0; i < TOTAL; i++) dots[i].classList.remove("on");
           startOverlay.hidden = true;
           resultOverlay.hidden = true;
+          adultResultOverlay.hidden = true;
           renderQuestion();
+        }
+
+        /* ---------- 大人モード（60びょう） ---------- */
+        function stopAdultTimer() {
+          if (aTimerId) { clearInterval(aTimerId); aTimerId = null; }
+          if (aNextTimer) { clearTimeout(aNextTimer); aNextTimer = null; }
+        }
+        function tickAdult() {
+          var remain = Math.max(0, Math.ceil((aDeadline - Date.now()) / 1000));
+          aTimeLeft = remain;
+          timeNum.textContent = remain;
+          timerBox.classList.toggle("low", remain <= 10 && remain > 0);
+          if (remain <= 0) finishAdult();
+        }
+        function startAdult() {
+          ensureAudio();
+          sndTap();
+          stopAdultTimer();
+          if (idleTimer) clearTimeout(idleTimer);
+          gameMode = "adult";
+          aScore = 0;
+          aCorrect = 0;
+          aStreak = 0;
+          aTimeLeft = 60;
+          countNum.textContent = "0";
+          countLbl.innerHTML = "てん";
+          dotsEl.style.display = "none";
+          adultHud.hidden = false;
+          quitBtn.hidden = false;
+          timeNum.textContent = "60";
+          timerBox.classList.remove("low");
+          updateMultPill(false);
+          startOverlay.hidden = true;
+          resultOverlay.hidden = true;
+          adultResultOverlay.hidden = true;
+          renderQuestion();
+          aDeadline = Date.now() + 60000;
+          aTimerId = setInterval(tickAdult, 200);
+        }
+        function finishAdult() {
+          if (gameMode !== "adult") return;
+          stopAdultTimer();
+          locked = true;
+          aTimeLeft = 0;
+          timeNum.textContent = "0";
+          timerBox.classList.remove("low");
+          quitBtn.hidden = true;
+          if (aScore > aBest) aBest = aScore;
+          var rank = aScore >= 2200 ? 3 : (aScore >= 1200 ? 2 : 1);
+          var starsEl = document.getElementById("adultStars");
+          starsEl.innerHTML = "";
+          for (var i = 0; i < 3; i++) {
+            starsEl.innerHTML += starSVG(i < rank ? "#f5b800" : "#c9d6df", 44);
+          }
+          document.getElementById("adultScoreNum").textContent = aScore;
+          document.getElementById("adultCorrectNum").textContent = aCorrect;
+          document.getElementById("adultBestNum").textContent = aBest;
+          if (aCorrect > 0) { sndFanfare(); confettiRain(); }
+          adultResultOverlay.hidden = false;
+        }
+        function backToStart() {
+          ensureAudio();
+          sndTap();
+          stopAdultTimer();
+          if (idleTimer) clearTimeout(idleTimer);
+          gameMode = "child";
+          qIndex = 0;
+          matched = 0;
+          starCount = 0;
+          cleanStreak = 0;
+          countNum.textContent = "0";
+          countLbl.innerHTML = "あわせた<br />かず";
+          dotsEl.style.display = "";
+          adultHud.hidden = true;
+          quitBtn.hidden = true;
+          for (var i = 0; i < TOTAL; i++) dots[i].classList.remove("on");
+          resultOverlay.hidden = true;
+          adultResultOverlay.hidden = true;
+          renderQuestion();
+          startOverlay.hidden = false;
         }
 
         document.getElementById("startBtn").addEventListener("click", startGame);
         document.getElementById("againBtn").addEventListener("click", startGame);
+        document.getElementById("adultBtn").addEventListener("click", startAdult);
+        document.getElementById("adultAgainBtn").addEventListener("click", startAdult);
+        document.getElementById("adultBackBtn").addEventListener("click", backToStart);
+        quitBtn.addEventListener("click", function () {
+          if (gameMode === "adult") finishAdult();
+        });
 
         // 最初の問題を裏で用意しておく（スタート画面の後ろに見える盤面）
         renderQuestion();
