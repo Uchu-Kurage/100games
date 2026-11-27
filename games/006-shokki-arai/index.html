@@ -316,7 +316,23 @@
       let grid = [];
       let nextId = 1;
       let S = null;          // per-game state
-      let bestScore = null;  // session-only best for 60s mode
+      const BEST_KEY = "shokki-arai-best-v1";
+      let bestScore = null;  // best for 60s mode (persisted via localStorage when available)
+      function loadBest() {
+        try {
+          const v = window.localStorage.getItem(BEST_KEY);
+          if (v !== null && v !== "") {
+            const n = Number(v);
+            if (Number.isFinite(n) && n >= 0) bestScore = n;
+          }
+        } catch (e) { /* storage unavailable: keep session-only best */ }
+      }
+      function saveBest() {
+        try {
+          if (bestScore !== null) window.localStorage.setItem(BEST_KEY, String(bestScore));
+        } catch (e) { /* storage unavailable: best stays in memory for this session */ }
+      }
+      loadBest();
 
       const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
       const randColor = () => Math.floor(Math.random() * NCOLORS);
@@ -755,7 +771,7 @@
         if (S.mode === "time") {
           stars = S.score >= 1800 ? 3 : S.score >= 1000 ? 2 : S.score >= 400 ? 1 : 0;
           const isRecord = bestScore === null || S.score > bestScore;
-          if (isRecord) bestScore = S.score;
+          if (isRecord) { bestScore = S.score; saveBest(); }
           recordEl.hidden = !isRecord || S.score === 0;
           box.innerHTML =
             '<div><div class="label">てん</div><div class="num">' + S.score + '</div></div>' +

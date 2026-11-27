@@ -408,6 +408,7 @@
             <button class="big-btn" id="startBtn" type="button">はじめる</button>
             <p class="start-note">おとなは こちら</p>
             <button class="big-btn sub" id="adultBtn" type="button">60びょう</button>
+            <p class="start-note" id="startBest" hidden>さいこう <b id="startBestNum">0</b> てん</p>
           </div>
         </div>
 
@@ -451,7 +452,7 @@
         </ul>
 
         <h3>大人の方向け「60秒モード」</h3>
-        <p>スタート画面の「60びょう」からは、大人向けのスコアアタックで遊べます。60秒間に何問片付けられるかを競い、連続正解で得点倍率が上がり、間違えると倍率だけが戻ります（時間のペナルティはありません）。後半になると、箱に「×」印がついた否定条件の問題（「これは違う箱だ」と判断して、「色だけ違う箱に入るもの」「形だけ違う箱に入るもの」「両方違う箱に入るもの」を選ぶ）が混ざり、つい同じ箱に入れたくなる衝動を抑える力が試されます。子どもの入口（操作・ルール）はそのままに、大人が本気になれる層を重ねた二層設計です。ベストスコアはその回のプレイ中だけ保持され、保存はされません。</p>
+        <p>スタート画面の「60びょう」からは、大人向けのスコアアタックで遊べます。60秒間に何問片付けられるかを競い、連続正解で得点倍率が上がり、間違えると倍率だけが戻ります（時間のペナルティはありません）。後半になると、箱に「×」印がついた否定条件の問題（「これは違う箱だ」と判断して、「色だけ違う箱に入るもの」「形だけ違う箱に入るもの」「両方違う箱に入るもの」を選ぶ）が混ざり、つい同じ箱に入れたくなる衝動を抑える力が試されます。子どもの入口（操作・ルール）はそのままに、大人が本気になれる層を重ねた二層設計です。ベストスコアはこのブラウザに保存され、次に開いたときも残ります。</p>
 
         <p class="note">※ 効果についての留保：このゲームで期待できるのは、「色や形への親しみ」と「分類の経験」を楽しく積むことです。それ以上の学力効果を保証するものではありません。お子さんが間違えたときは、正解を急がせず、「どこが同じかな？」と一緒に眺める時間そのものが、分類する力の芽を育てます。</p>
       </section>
@@ -595,6 +596,17 @@
         var timerBox = document.getElementById("timerBox");
         var timeNum = document.getElementById("timeNum");
         var quitBtn = document.getElementById("quitBtn");
+        var startBestEl = document.getElementById("startBest");
+        var startBestNum = document.getElementById("startBestNum");
+        function refreshStartBest() {
+          if (!startBestEl || !startBestNum) return;
+          if (aBest > 0) {
+            startBestNum.textContent = aBest;
+            startBestEl.hidden = false;
+          } else {
+            startBestEl.hidden = true;
+          }
+        }
 
         var qIndex = 0;       // 今の問題番号 0..9
         var matched = 0;      // 合わせた数
@@ -610,7 +622,11 @@
         var aScore = 0;           // スコア
         var aCorrect = 0;         // 正解数
         var aStreak = 0;          // 連続正解（一発正解のみ数える）
-        var aBest = 0;            // セッション内ベスト（保存しない）
+        var aBest = 0;            // ベストスコア（ブラウザに保存して次回も残す）
+        try {
+          var savedBest = parseInt(window.localStorage.getItem("okatazuke_best"), 10);
+          if (!isNaN(savedBest) && savedBest > 0) aBest = savedBest;
+        } catch (e) {}
         var aTimeLeft = 60;       // 残り秒数
         var aTimerId = null;
         var aDeadline = 0;
@@ -1032,7 +1048,11 @@
           timeNum.textContent = "0";
           timerBox.classList.remove("low");
           quitBtn.hidden = true;
-          if (aScore > aBest) aBest = aScore;
+          if (aScore > aBest) {
+            aBest = aScore;
+            try { window.localStorage.setItem("okatazuke_best", String(aBest)); } catch (e) {}
+          }
+          refreshStartBest();
           var rank = aScore >= 2200 ? 3 : (aScore >= 1200 ? 2 : 1);
           var starsEl = document.getElementById("adultStars");
           starsEl.innerHTML = "";
@@ -1063,6 +1083,7 @@
           for (var i = 0; i < TOTAL; i++) dots[i].classList.remove("on");
           resultOverlay.hidden = true;
           adultResultOverlay.hidden = true;
+          refreshStartBest();
           renderQuestion();
           startOverlay.hidden = false;
         }
@@ -1077,6 +1098,7 @@
         });
 
         // 最初の問題を裏で用意しておく（スタート画面の後ろに見える盤面）
+        refreshStartBest();
         renderQuestion();
       })();
     </script>

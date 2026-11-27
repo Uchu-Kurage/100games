@@ -285,7 +285,7 @@
       <li><span class="dot">🕊️</span><span><strong>制限時間なし・罰なし：</strong> 標準モードは制限時間なしで、失敗やゲームオーバーで何かを奪う仕組みはありません。急かされず自分のペースで試行錯誤できることが、幼児期の遊びでは大切だと考えられているためです。60秒モードは、大人が任意で選べるものとしてのみ残しています。</span></li>
       <li><span class="dot">🌸</span><span><strong>過程への称賛：</strong> 区画完了時はスコアだけでなく、取り組んだ過程を褒める言葉と星・花の演出を返します。結果の優劣ではなく「やった過程」に注目する関わりが、挑戦を続ける意欲につながるとされています。減点や罰は入れていません。</span></li>
       <li><span class="dot">💡</span><span><strong>つまずきへの支援：</strong> しばらく操作がないと、近くのまだ刈れていない場所がやさしく光って、次の行動をそっと示します。間違えても責めず、ヒントで支える足場かけの考え方を取り入れています。</span></li>
-      <li><span class="dot">🏆</span><span><strong>大人のための層（任意）：</strong> 「60びょう」モードでは、刈った草の数に花・金の草のボーナスが加わるスコア制に加え、区画を1本も取り残さず100%刈り切ると大きなボーナスが入ります（通常の区画完了とは音と色の演出が異なります）。終了時にはスコアに応じた星1〜3のランクと、そのセッションでのベストスコアが表示されます。子ども向けののんびりモード（制限時間なし・罰なし）はそのまま残してあり、大人が「あと少しでベスト更新」を狙える層だけを上に重ねた二層設計にしています。ベストスコアはページを開いている間だけ保持され、保存はされません。</span></li>
+      <li><span class="dot">🏆</span><span><strong>大人のための層（任意）：</strong> 「60びょう」モードでは、刈った草の数に花・金の草のボーナスが加わるスコア制に加え、区画を1本も取り残さず100%刈り切ると大きなボーナスが入ります（通常の区画完了とは音と色の演出が異なります）。終了時にはスコアに応じた星1〜3のランクと、ベストスコアが表示されます。子ども向けののんびりモード（制限時間なし・罰なし）はそのまま残してあり、大人が「あと少しでベスト更新」を狙える層だけを上に重ねた二層設計にしています。ベストスコアはブラウザに保存され、次に開いたときも残ります（ブラウザの設定で保存できない場合は、その回限りとなります）。</span></li>
       <li><span class="dot">📖</span><span><strong>根拠と留保：</strong> 数の学習については、数と触れる設計のボードゲームで数の大小や数える力の改善が報告された研究（Ramani &amp; Siegler, 2008）などを参考にしています。ただし「ゲーム全般で頭が良くなる」といった広い効果は実証されておらず、効果が確認されているのは特定の内容と設計の組み合わせに限られます。このゲームも、遊びながら数に親しむきっかけの一つとして位置づけています。</span></li>
     </ul>
   </section>
@@ -357,7 +357,20 @@
   var floaters = [];   // スコア表示
   var mower = { x: W/2, y: H/2, r: 30, angle: -Math.PI/2, speed: 300, moving:false };
   var score = 0, best = 0;
-  var bestTimed = 0;       // 大人層：60びょうモードのセッション内ベスト（メモリ内のみ保持）
+  // 大人層：60びょうモードのベスト。localStorageに保存し、次回開いたときも残る。
+  // 保存できない環境では従来どおりセッション内ベストとして動作させる（try/catchで囲み、エラーで止めない）
+  var BEST_KEY = 'kusakari-best-v1';
+  function loadBestTimed(){
+    try{
+      var v = window.localStorage.getItem(BEST_KEY);
+      var n = v ? parseInt(v, 10) : 0;
+      return (isFinite(n) && n > 0) ? n : 0;
+    }catch(e){ return 0; }
+  }
+  function saveBestTimed(v){
+    try{ window.localStorage.setItem(BEST_KEY, String(v)); }catch(e){}
+  }
+  var bestTimed = loadBestTimed();
   var perfectCount = 0;    // 大人層：このセッションで「とりのこし なし」にした区画数
   var round = 1;
   var timeLeft = GAME_TIME;
@@ -1061,9 +1074,9 @@
     // 大人層：ほしランクはスコア帯で1〜3（1800未満＝1、1800以上＝2、3500以上＝3）。文字でなく星で表す
     var starCount = score >= 3500 ? 3 : (score >= 1800 ? 2 : 1);
     finalRank.textContent = new Array(starCount + 1).join('★') + new Array(3 - starCount + 1).join('☆');
-    // 大人層：セッション内ベスト（このページを開いている間の最高スコア。保存はしない）
+    // 大人層：ベスト（ブラウザに保存され、次回開いたときも残る。保存できない環境ではセッション内のみ）
     var isNewBest = score > bestTimed && score > 0;
-    if(isNewBest) bestTimed = score;
+    if(isNewBest){ bestTimed = score; saveBestTimed(bestTimed); }
     if(score > best) best = score;
     finalNewBest.hidden = !isNewBest;
     finalDetail.textContent = '⭐ いちばん ' + bestTimed.toLocaleString('ja-JP') + '　🌸 ' + flowerCount + '　🌿 ' + round;

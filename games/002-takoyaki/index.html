@@ -145,6 +145,8 @@
       .timebar > div { background: var(--accent); transition: width 0.1s linear; }
       .timebar[hidden] { display: none; }
       .mode-note { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-align: right; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #startBest { font-size: 13px; font-weight: 700; color: var(--ink-soft); text-align: center; margin: 0 0 10px; }
+      #startBest[hidden] { display: none; }
 
       /* ---------- Board ---------- */
       .board-frame[hidden] { display: none; }
@@ -467,6 +469,7 @@
                 <svg class="demo-hand" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L21 13 H15.5 V22 H8.5 V13 H3 Z" fill="#ffb703" stroke="#c78f08" stroke-width="1.4" stroke-linejoin="round" transform="rotate(180 12 12)"/></svg>
               </div>
               <p>やけてきたら さわって<br />ひっくりかえしてね　50こ やこう</p>
+              <div id="startBest" hidden></div>
               <div class="mode-btns">
                 <button class="btn" id="startFreeBtn" type="button">あそぶ<span class="btn-sub">そらぶりで れんぞくが 0に なるよ</span></button>
                 <button class="btn secondary" id="startTimedBtn" type="button" style="flex:none;">ゆっくり あそぶ</button>
@@ -576,7 +579,30 @@
       var countHud = document.getElementById("countHud");
       var timeLabel = document.getElementById("timeLabel");
       var praiseTimer = null;
-      var bestTimeMs = null; // このセッション内でのベストタイム（保存はしない）
+      var BEST_TIME_KEY = "takoyaki_best_time_ms_v1";
+      var bestTimeMs = null;
+      try {
+        var savedBest = window.localStorage.getItem(BEST_TIME_KEY);
+        if (savedBest !== null) {
+          var parsedBest = parseInt(savedBest, 10);
+          if (isFinite(parsedBest) && parsedBest > 0) bestTimeMs = parsedBest;
+        }
+      } catch (e) { bestTimeMs = null; }
+      function saveBestTime() {
+        if (bestTimeMs === null) return;
+        try { window.localStorage.setItem(BEST_TIME_KEY, String(bestTimeMs)); } catch (e) {}
+      }
+      var startBestEl = document.getElementById("startBest");
+      function updateStartBest() {
+        if (!startBestEl) return;
+        if (bestTimeMs !== null) {
+          startBestEl.textContent = "いちばん はやい じかん： " + formatTimePrecise(bestTimeMs);
+          startBestEl.hidden = false;
+        } else {
+          startBestEl.textContent = "";
+          startBestEl.hidden = true;
+        }
+      }
       var startOverlay = document.getElementById("startOverlay");
       var resultOverlay = document.getElementById("resultOverlay");
       var boardFrame = document.getElementById("boardFrame");
@@ -1097,8 +1123,9 @@
         if (praiseLine) praiseLine.textContent = "";
         var isAttackClear = mode === "attack" && count >= TARGET;
         if (mode === "attack" && isAttackClear) {
-          if (bestTimeMs === null || elapsed < bestTimeMs) bestTimeMs = elapsed;
+          if (bestTimeMs === null || elapsed < bestTimeMs) { bestTimeMs = elapsed; saveBestTime(); }
         }
+        updateStartBest();
         document.getElementById("resultTitle").textContent = isAttackClear ? "50こ やけたね" : "おつかれさま";
         document.getElementById("rTimeWrap").style.display = mode === "attack" ? "" : "none";
         document.getElementById("rTimeLabel").textContent = "じかん";
@@ -1147,6 +1174,7 @@
         cancelAnimationFrame(rafId);
         holes.forEach(function (h) { h.el.disabled = true; hideMole(h, false); });
         clearHints();
+        updateStartBest();
         boardFrame.hidden = true;
         resultOverlay.hidden = true;
         startOverlay.hidden = false;
@@ -1220,6 +1248,7 @@
 
       renderBasket();
       updateHUD();
+      updateStartBest();
     })();
     </script>
   </body>

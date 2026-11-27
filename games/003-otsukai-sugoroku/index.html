@@ -653,7 +653,21 @@
         var state = "ready"; // ready | idle | rolling | choosing | moving | goal
         var mode = "normal"; // normal | choice
         var PAR = 9;         // target rolls for choice mode
-        var bestChoice = null; // fewest rolls this session (choice mode)
+        var BEST_KEY = "otsukai-sugoroku-choice-best-v1";
+        function loadBest() {
+          try {
+            var v = localStorage.getItem(BEST_KEY);
+            if (v !== null) {
+              var n = parseInt(v, 10);
+              if (!isNaN(n) && n >= 1 && n <= 99) return n;
+            }
+          } catch (e) {}
+          return null;
+        }
+        function saveBest(n) {
+          try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) {}
+        }
+        var bestChoice = loadBest(); // fewest rolls in choice mode (persisted)
         var choiceVals = [1, 1];
         var idleTimer = null;
         var audioCtx = null;
@@ -888,7 +902,10 @@
             for (var i = 0; i < rank; i++) rankHtml += '<svg><use href="#ic-star"/></svg>';
             starsEl.innerHTML = rankHtml;
             starsEl.classList.add("rank");
-            if (bestChoice === null || rolls < bestChoice) bestChoice = rolls;
+            if (bestChoice === null || rolls < bestChoice) {
+              bestChoice = rolls;
+              saveBest(bestChoice);
+            }
             bestLineEl.textContent = "めあて " + PAR + "かい ・ きろく " + bestChoice + "かい";
             bestLineEl.classList.remove("hidden");
           } else {

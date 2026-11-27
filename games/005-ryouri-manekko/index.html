@@ -514,11 +514,27 @@
         var inputPos = 0;
         var mistakesThisRound = 0;
         var stars = 0;
-        // えんどれす用：ミスは3回まで、記録はこのセッション内のみ
+        // えんどれす用：ミスは3回まで。ベストはブラウザに保存し、保存できない環境ではセッション内のみ
+        var BEST_KEY = "ryouri-manekko-best-v1";
         var lives = 3;
         var endlessMaxLen = 0;   // こなせた いちばん ながい じゅんばん
-        var bestLen = 0;         // セッション内ベスト（最長）
-        var bestRounds = 0;      // セッション内ベスト（ラウンド数）
+        var bestLen = 0;         // ベスト（最長）
+        var bestRounds = 0;      // ベスト（ラウンド数）
+        function loadBest() {
+          try {
+            var raw = window.localStorage.getItem(BEST_KEY);
+            if (!raw) return;
+            var data = JSON.parse(raw);
+            if (data && typeof data.bestLen === "number" && isFinite(data.bestLen) && data.bestLen >= 0) bestLen = data.bestLen;
+            if (data && typeof data.bestRounds === "number" && isFinite(data.bestRounds) && data.bestRounds >= 0) bestRounds = data.bestRounds;
+          } catch (e) { /* 保存できない環境ではセッション内ベストとして動作 */ }
+        }
+        function saveBest() {
+          try {
+            window.localStorage.setItem(BEST_KEY, JSON.stringify({ bestLen: bestLen, bestRounds: bestRounds }));
+          } catch (e) { /* 保存できない環境ではセッション内ベストとして動作 */ }
+        }
+        loadBest();
         var hintTimer = null;
         var timers = [];
 
@@ -693,7 +709,7 @@
           var roundsCleared = round;
           var isBest = endlessMaxLen > bestLen ||
             (endlessMaxLen === bestLen && roundsCleared > bestRounds);
-          if (isBest) { bestLen = endlessMaxLen; bestRounds = roundsCleared; }
+          if (isBest) { bestLen = endlessMaxLen; bestRounds = roundsCleared; saveBest(); }
           starsEl.innerHTML = "";
           starsEl.style.display = "none";
           resultBigEl.textContent = "おつかれさま！";
