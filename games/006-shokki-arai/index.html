@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>しょっき あらい</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f6f8f3;
+        --panel: #ffffff;
+        --ink: #243024;
+        --muted: #68796a;
+        --line: #dfe7dc;
+        --accent: #2e9e5b;
+        --accent-dark: #22793f;
+        --gold: #f2b705;
+        --board-bg: #e9f1e6;
+        --shadow: 0 6px 20px rgba(36, 48, 36, 0.10);
+        --tint0: #fde3e1; --tint1: #dfeefc; --tint2: #fdf3cf; --tint3: #e0f4e2;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #12180f;
+          --panel: #1e2a1c;
+          --ink: #eef4ec;
+          --muted: #9db3a0;
+          --line: #33422f;
+          --accent: #43b96c;
+          --accent-dark: #2e9e5b;
+          --board-bg: #24331f;
+          --shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+          --tint0: #472b28; --tint1: #27384c; --tint2: #4a3f1d; --tint3: #26402a;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      button { font-family: inherit; cursor: pointer; }
+      .app { max-width: 480px; margin: 0 auto; padding: 14px 14px 40px; }
+
+      /* ---------- start / end screens ---------- */
+      .screen { padding-top: 10px; }
+      .game-title {
+        text-align: center; font-size: 42px; font-weight: 800; letter-spacing: 0.04em;
+        margin: 18px 0 6px;
+      }
+      .shape-row { display: flex; justify-content: center; gap: 18px; margin: 14px 0 26px; }
+      .shape-row .deco { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; animation: bob 2.2s ease-in-out infinite; }
+      .shape-row .deco svg { width: 78%; height: 78%; }
+      .shape-row .deco:nth-child(2) { animation-delay: 0.25s; }
+      .shape-row .deco:nth-child(3) { animation-delay: 0.5s; }
+      .shape-row .deco:nth-child(4) { animation-delay: 0.75s; }
+      @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+      .c0 { color: #e84c4c; } .c1 { color: #2f7fe0; } .c2 { color: #eda900; } .c3 { color: #34a853; }
+      .deco.c0 { background: var(--tint0); } .deco.c1 { background: var(--tint1); }
+      .deco.c2 { background: var(--tint2); } .deco.c3 { background: var(--tint3); }
+
+      .mode-btn {
+        display: flex; align-items: center; justify-content: center; gap: 12px;
+        width: 100%; min-height: 72px; margin: 12px 0; border: none; border-radius: 20px;
+        background: var(--accent); color: #fff; font-size: 32px; font-weight: 800; letter-spacing: 0.06em;
+        box-shadow: var(--shadow); transition: transform 0.08s ease, background 0.15s ease;
+      }
+      .mode-btn:active { transform: scale(0.97); background: var(--accent-dark); }
+      .mode-btn.sub { background: var(--panel); color: var(--ink); border: 3px solid var(--accent); }
+      .mode-btn.sub:active { background: var(--board-bg); }
+
+      /* ---------- HUD (fixed height: board never moves) ---------- */
+      .hud {
+        position: relative; height: 128px; padding: 4px 2px 0;
+        display: flex; flex-direction: column;
+      }
+      .hud-row { display: flex; justify-content: space-between; align-items: flex-start; height: 58px; }
+      .stat { min-width: 110px; }
+      .stat.center { text-align: center; min-width: 80px; }
+      .stat.center .num { color: var(--gold); }
+      .stat.right { text-align: right; }
+      .stat .label { font-size: 14px; font-weight: 700; color: var(--muted); line-height: 1; }
+      .stat .num { font-size: 42px; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; }
+      .stat .num.urgent { color: #e84c4c; }
+      .msg {
+        height: 48px; display: flex; align-items: center; justify-content: center;
+        font-size: 30px; font-weight: 800; color: var(--accent-dark); text-align: center;
+        overflow: hidden; white-space: nowrap;
+      }
+      @media (prefers-color-scheme: dark) { .msg { color: var(--accent); } }
+      .msg.pop-in { animation: msgPop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+      @keyframes msgPop { 0% { transform: scale(0.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+      .timebar-wrap { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 2px; }
+      .timebar { height: 100%; width: 100%; background: var(--accent); border-radius: 99px; }
+      .float-score {
+        position: absolute; top: 6px; left: 84px; font-size: 24px; font-weight: 800; color: var(--gold);
+        pointer-events: none; text-shadow: 0 1px 0 rgba(0,0,0,0.12);
+      }
+
+      /* ---------- board ---------- */
+      .board-clip {
+        position: relative; width: min(100%, 430px); margin: 4px auto 0;
+        border-radius: 18px; overflow: hidden; background: var(--board-bg);
+        box-shadow: var(--shadow);
+      }
+      .board {
+        position: relative; width: 100%; aspect-ratio: 1 / 1; touch-action: none;
+        background-image:
+          linear-gradient(to right, rgba(36,48,36,0.055) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(36,48,36,0.055) 1px, transparent 1px);
+        background-size: 16.6667% 16.6667%;
+      }
+      .tile {
+        position: absolute; left: 0; top: 0; width: 16.6667%; height: 16.6667%;
+        padding: 3px; transition: transform 0.3s cubic-bezier(0.35, 0.8, 0.4, 1);
+        will-change: transform;
+        appearance: none; border: none; background: none; cursor: pointer;
+      }
+      .tile:focus-visible { outline: 3px solid var(--gold); outline-offset: -3px; border-radius: 18px; z-index: 2; }
+      .tile-inner {
+        width: 100%; height: 100%; display: grid; place-items: center; border-radius: 24%;
+        box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.06);
+      }
+      .tile-inner svg { width: 76%; height: 76%; display: block; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.15)); }
+      .tile-inner.c0 { background: var(--tint0); } .tile-inner.c1 { background: var(--tint1); }
+      .tile-inner.c2 { background: var(--tint2); } .tile-inner.c3 { background: var(--tint3); }
+      .tile.pop .tile-inner { animation: tilePop 0.24s ease-in forwards; }
+      @keyframes tilePop {
+        0% { transform: scale(1); opacity: 1; }
+        40% { transform: scale(1.28); opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+      .tile.wiggle .tile-inner { animation: wiggle 0.32s ease; }
+      @keyframes wiggle {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-4px); } 75% { transform: translateX(4px); }
+      }
+      .tile.hint .tile-inner { animation: hintPulse 0.9s ease-in-out infinite; }
+      @keyframes hintPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(242, 183, 5, 0); }
+        50% { box-shadow: 0 0 0 4px rgba(242, 183, 5, 0.95); }
+      }
+      .tile.flip .tile-inner { animation: flipIn 0.4s ease; }
+      @keyframes flipIn { 0% { transform: rotateY(90deg); opacity: 0.3; } 100% { transform: rotateY(0); opacity: 1; } }
+      #fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+      .particle { position: absolute; border-radius: 50%; pointer-events: none; box-sizing: border-box; }
+      .clean-dish {
+        position: absolute; width: 16.6667%; aspect-ratio: 1 / 1; padding: 6px;
+        display: grid; place-items: center; pointer-events: none;
+        animation: cleanReveal 0.85s ease-out forwards;
+      }
+      .clean-dish svg { width: 88%; height: 88%; display: block; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.9)); }
+      @keyframes cleanReveal {
+        0% { transform: scale(0.5); opacity: 0; }
+        25% { transform: scale(1.12); opacity: 1; }
+        60% { transform: scale(1); opacity: 1; }
+        100% { transform: scale(0.96) translateY(6px); opacity: 0; }
+      }
+
+      .controls { display: flex; justify-content: center; margin-top: 16px; }
+      .end-btn {
+        min-height: 52px; padding: 8px 34px; border-radius: 99px; border: 3px solid var(--line);
+        background: var(--panel); color: var(--ink); font-size: 20px; font-weight: 800; letter-spacing: 0.05em;
+      }
+      .end-btn:active { transform: scale(0.96); }
+
+      /* ---------- end screen ---------- */
+      .stars { text-align: center; font-size: 56px; letter-spacing: 0.12em; margin: 10px 0 2px; line-height: 1.2; }
+      .stars .on { color: var(--gold); display: inline-block; animation: starIn 0.5s cubic-bezier(0.2, 1.8, 0.4, 1) backwards; }
+      .stars .on:nth-child(2) { animation-delay: 0.15s; }
+      .stars .on:nth-child(3) { animation-delay: 0.3s; }
+      .stars .off { color: var(--line); }
+      @keyframes starIn { 0% { transform: scale(0) rotate(-40deg); } 100% { transform: scale(1) rotate(0); } }
+      .praise { text-align: center; font-size: 30px; font-weight: 800; margin: 4px 0 14px; }
+      .result-box {
+        background: var(--panel); border: 2px solid var(--line); border-radius: 20px;
+        padding: 16px 20px; margin: 0 auto 20px; max-width: 340px;
+        display: flex; justify-content: space-around; text-align: center;
+      }
+      .result-box .label { font-size: 14px; font-weight: 700; color: var(--muted); }
+      .result-box .num { font-size: 44px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+      .new-record { text-align: center; font-size: 22px; font-weight: 800; color: var(--gold); margin: -6px 0 12px; animation: msgPop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1); }
+
+      #confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+      .confetto { position: absolute; top: -16px; border-radius: 3px; pointer-events: none; }
+
+      /* ---------- parents ---------- */
+      .parents {
+        margin-top: 44px; background: var(--panel); border: 2px solid var(--line);
+        border-radius: 20px; padding: 22px 22px 10px; line-height: 1.8; font-size: 15px;
+      }
+      .parents h2 { font-size: 19px; margin: 0 0 10px; }
+      .parents h3 { font-size: 16px; margin: 18px 0 4px; }
+      .parents p { margin: 0 0 12px; color: var(--ink); }
+      .parents .note { color: var(--muted); font-size: 13.5px; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .shape-row .deco, .tile.hint .tile-inner { animation: none; }
+        .tile { transition-duration: 0.05s; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+
+      <!-- start screen -->
+      <section id="screen-start" class="screen">
+        <h1 class="game-title">しょっき あらい</h1>
+        <div class="shape-row" aria-hidden="true">
+          <div class="deco c0"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="currentColor"/><circle cx="50" cy="50" r="25" fill="#ffffff" opacity="0.35"/><circle cx="32" cy="30" r="9" fill="#ffffff" opacity="0.55"/><circle cx="70" cy="24" r="6" fill="#ffffff" opacity="0.5"/></svg></div>
+          <div class="deco c1"><svg viewBox="0 0 100 100"><path d="M28 18h44l-5 58a9 9 0 0 1-9 8H42a9 9 0 0 1-9-8z" fill="currentColor"/><rect x="31" y="34" width="38" height="7" rx="3.5" fill="#ffffff" opacity="0.4"/><circle cx="36" cy="26" r="7" fill="#ffffff" opacity="0.55"/><circle cx="66" cy="58" r="6" fill="#ffffff" opacity="0.45"/></svg></div>
+          <div class="deco c2"><svg viewBox="0 0 100 100"><path d="M12 40h76c0 20-15 34-38 34S12 60 12 40z" fill="currentColor"/><rect x="10" y="32" width="80" height="9" rx="4.5" fill="currentColor"/><rect x="38" y="76" width="24" height="7" rx="3" fill="currentColor"/><circle cx="30" cy="24" r="8" fill="#ffffff" opacity="0.55"/><circle cx="72" cy="20" r="5" fill="#ffffff" opacity="0.5"/></svg></div>
+          <div class="deco c3"><svg viewBox="0 0 100 100"><g transform="rotate(32 50 50)"><ellipse cx="50" cy="30" rx="15" ry="20" fill="currentColor"/><rect x="45.5" y="44" width="9" height="42" rx="4.5" fill="currentColor"/></g><circle cx="28" cy="66" r="7" fill="#ffffff" opacity="0.5"/><circle cx="74" cy="30" r="6" fill="#ffffff" opacity="0.55"/></svg></div>
+        </div>
+        <button class="mode-btn" id="btn-free" type="button">じゆう</button>
+        <button class="mode-btn sub" id="btn-time" type="button">60びょう</button>
+      </section>
+
+      <!-- game screen -->
+      <section id="screen-game" class="screen" hidden>
+        <div class="hud">
+          <div class="hud-row">
+            <div class="stat">
+              <div class="label" id="stat-label">あらえた</div>
+              <div class="num" id="stat-num">0</div>
+            </div>
+            <div class="stat center" id="mult-stat">
+              <div class="label">ばいりつ</div>
+              <div class="num" id="mult-num">×1</div>
+            </div>
+            <div class="stat right" id="time-stat">
+              <div class="label">のこり</div>
+              <div class="num" id="time-num">60</div>
+            </div>
+          </div>
+          <div class="msg" id="msg" aria-live="polite"></div>
+          <div class="timebar-wrap" id="timebar-wrap"><div class="timebar" id="timebar"></div></div>
+        </div>
+        <div class="board-clip">
+          <div class="board" id="board"></div>
+          <div id="fx"></div>
+        </div>
+        <div class="controls">
+          <button class="end-btn" id="btn-finish" type="button">おしまい</button>
+        </div>
+      </section>
+
+      <!-- end screen -->
+      <section id="screen-end" class="screen" hidden>
+        <div class="stars" id="stars"></div>
+        <div class="praise" id="praise"></div>
+        <div class="new-record" id="new-record" hidden>しんきろく！</div>
+        <div class="result-box" id="result-box"></div>
+        <button class="mode-btn" id="btn-again" type="button">もういちど</button>
+        <button class="mode-btn sub" id="btn-home" type="button">もどる</button>
+      </section>
+
+      <!-- parents -->
+      <section class="parents">
+        <h2>保護者の方へ（教育的観点）</h2>
+        <p>「しょっき あらい」は、上下左右でつながった同じ色・食器の泡のまとまりを3つ以上まとめてタップし、泡をはじいて食器を洗っていくパズルです。4個目の「いろ・かたち あわせ」で育てた見分ける力を、パターン認識の遊びへ発展させたものとして作りました。</p>
+        <h3>モチーフ：食器洗いと「汚れ→きれい」の痕跡</h3>
+        <p>モチーフは日常の動作である食器洗いです。泡に包まれた食器をタップすると泡がはじけ、下からきれいになった食器が現れます。落下と連鎖は「泡が流れて、次々と食器がきれいになっていく」流れとして表現しています。現実の食器洗いと同じく、「汚れていたものがきれいになった」という変化が目に見えて残ることが、達成感と爽快感の核になっています。面倒な家事の中にある「やり始めると気持ちいい」感覚を、そのまま遊びの気持ちよさに重ねました。</p>
+        <h3>分類とパターン認識</h3>
+        <p>同じ色のまとまりを探して見分ける経験は、分類の基礎です。各色には固有の食器（赤＝お皿、青＝コップ、黄＝お椀、緑＝スプーン）を対応させているので、色だけに頼らず形でも見分けられます。色覚の特性があるお子さんにも遊びやすいよう、二重の手がかりにしています。</p>
+        <h3>数を数える経験</h3>
+        <p>食器を洗うたびに、洗えた数が大きく数え上がります。「いくつ洗えたか」「泡のまとまりはいくつあるか」を目で追うことが、まとまりを数える経験につながります。</p>
+        <h3>先を読む思考</h3>
+        <p>大きなまとまりを育ててから消すと得点が大きく伸び、落下のあとに新しいまとまりができると連鎖が起きます。「今消すか、育ててから消すか」を考える中で、少し先の展開を読む力が育ちます。</p>
+        <h3>大人も楽しめる二層設計</h3>
+        <p>入口の操作はタップだけのまま、60秒のスコアアタックや連鎖の得点倍率など、大人が夢中になれる層を重ねています。お子さんと一緒に、スコアを競い合う遊び方もできます。</p>
+        <p class="note">なお、こうした効果は「分類と数への親しみ」に留まるもので、学力の向上を保証するものではありません。制限時間のない「じゆう」モードでは罰も失敗もありませんので、のんびり遊ぶ時間としてお楽しみください。</p>
+      </section>
+    </div>
+    <div id="confetti"></div>
+
+    <script>
+    "use strict";
+      const ROWS = 6, COLS = 6, NCOLORS = 4, MIN = 3;
+      const BUBBLES = '<g fill="#ffffff"><circle cx="29" cy="27" r="9" opacity="0.55"/><circle cx="71" cy="22" r="6" opacity="0.5"/><circle cx="78" cy="64" r="8" opacity="0.42"/><circle cx="22" cy="68" r="5.5" opacity="0.48"/><circle cx="52" cy="14" r="4.5" opacity="0.5"/><circle cx="33" cy="33" r="3" opacity="0.8"/></g>';
+      const DISH = [
+        '<circle cx="50" cy="50" r="40" fill="currentColor"/><circle cx="50" cy="50" r="25" fill="#ffffff" opacity="0.35"/>',
+        '<path d="M28 18h44l-5 58a9 9 0 0 1-9 8H42a9 9 0 0 1-9-8z" fill="currentColor"/><rect x="31" y="34" width="38" height="7" rx="3.5" fill="#ffffff" opacity="0.4"/>',
+        '<path d="M12 40h76c0 20-15 34-38 34S12 60 12 40z" fill="currentColor"/><rect x="10" y="32" width="80" height="9" rx="4.5" fill="currentColor"/><rect x="38" y="76" width="24" height="7" rx="3" fill="currentColor"/>',
+        '<g transform="rotate(32 50 50)"><ellipse cx="50" cy="30" rx="15" ry="20" fill="currentColor"/><rect x="45.5" y="44" width="9" height="42" rx="4.5" fill="currentColor"/></g>'
+      ];
+      const SVG = DISH.map((d) => '<svg viewBox="0 0 100 100">' + d + BUBBLES + '</svg>');
+      const SVG_CLEAN = DISH.map((d) => '<svg viewBox="0 0 100 100">' + d + '</svg>');
+      const TILE_COLORS = ["#e84c4c", "#2f7fe0", "#eda900", "#34a853"];
+      const TILE_NAMES = ["あか おさら", "あお こっぷ", "きいろ おわん", "みどり すぷーん"];
+      const LADDER = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.7, 1318.5];
+
+      const boardEl = document.getElementById("board");
+      const fxEl = document.getElementById("fx");
+      const msgEl = document.getElementById("msg");
+      const statLabel = document.getElementById("stat-label");
+      const statNum = document.getElementById("stat-num");
+      const timeStat = document.getElementById("time-stat");
+      const multStat = document.getElementById("mult-stat");
+      const multNum = document.getElementById("mult-num");
+      const timeNum = document.getElementById("time-num");
+      const timebarWrap = document.getElementById("timebar-wrap");
+      const timebar = document.getElementById("timebar");
+      const screens = {
+        start: document.getElementById("screen-start"),
+        game: document.getElementById("screen-game"),
+        end: document.getElementById("screen-end")
+      };
+
+      let grid = [];
+      let nextId = 1;
+      let S = null;          // per-game state
+      let bestScore = null;  // session-only best for 60s mode
+
+      const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+      const randColor = () => Math.floor(Math.random() * NCOLORS);
+
+      function showScreen(name) {
+        Object.keys(screens).forEach((k) => { screens[k].hidden = k !== name; });
+      }
+
+      /* ---------------- audio ---------------- */
+      let AC = null;
+      function ac() {
+        if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+        if (AC && AC.state === "suspended") AC.resume();
+        return AC;
+      }
+      function tone(freq, opt) {
+        const ctx = ac(); if (!ctx) return;
+        const o = opt || {};
+        const dur = o.dur || 0.18, type = o.type || "triangle", vol = o.vol || 0.2, at = o.at || 0;
+        const osc = ctx.createOscillator(), g = ctx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        const t0 = ctx.currentTime + at;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(vol, t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(t0); osc.stop(t0 + dur + 0.05);
+      }
+      function popSound(chain, n) {
+        const idx = Math.min(chain - 1 + (n >= 7 ? 1 : 0), LADDER.length - 1);
+        const f = LADDER[Math.max(0, idx)];
+        tone(f, { vol: 0.24 });
+        tone(f * 1.5, { vol: 0.1, dur: 0.14 });
+        if (n >= 6) tone(f * 2, { vol: 0.09, dur: 0.2, at: 0.04 });
+      }
+      function fanfare() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, { at: i * 0.1, dur: 0.3, vol: 0.2 }));
+      }
+
+      /* ---------------- tiles & board ---------------- */
+      function createTile(color, r, c) {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className = "tile";
+        el.setAttribute("aria-label", TILE_NAMES[color]);
+        const inner = document.createElement("div");
+        inner.className = "tile-inner c" + color;
+        inner.innerHTML = SVG[color];
+        el.appendChild(inner);
+        const t = { id: nextId++, color: color, r: r, c: c, el: el, inner: inner, spawnFrom: null };
+        el.dataset.id = t.id;
+        return t;
+      }
+      function place(t, instant) {
+        if (instant) t.el.style.transition = "none";
+        t.el.style.transform = "translate(" + t.c * 100 + "%, " + t.r * 100 + "%)";
+        if (instant) { void t.el.offsetWidth; t.el.style.transition = ""; }
+      }
+      function eachTile(fn) { for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const t = grid[r] && grid[r][c]; if (t) fn(t); } }
+
+      function groupFrom(start) {
+        const color = start.color, seen = new Set([start.id]), stack = [start], out = [];
+        while (stack.length) {
+          const t = stack.pop(); out.push(t);
+          const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+          for (let i = 0; i < 4; i++) {
+            const nr = t.r + dirs[i][0], nc = t.c + dirs[i][1];
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+            const n = grid[nr][nc];
+            if (n && n.color === color && !seen.has(n.id)) { seen.add(n.id); stack.push(n); }
+          }
+        }
+        return out;
+      }
+      function allGroups() {
+        const seen = new Set(), groups = [];
+        eachTile((t) => {
+          if (seen.has(t.id)) return;
+          const g = groupFrom(t);
+          g.forEach((x) => seen.add(x.id));
+          if (g.length >= MIN) groups.push(g);
+        });
+        return groups;
+      }
+      function hasMoves() { return allGroups().length > 0; }
+
+      function buildBoard() {
+        boardEl.innerHTML = "";
+        let colors;
+        do {
+          colors = [];
+          for (let i = 0; i < ROWS * COLS; i++) colors.push(randColor());
+        } while (!colorsHaveGroup(colors));
+        grid = [];
+        for (let r = 0; r < ROWS; r++) {
+          grid.push([]);
+          for (let c = 0; c < COLS; c++) {
+            const t = createTile(colors[r * COLS + c], r, c);
+            grid[r].push(t);
+            boardEl.appendChild(t.el);
+            t.el.style.transform = "translate(" + c * 100 + "%, " + (r - ROWS) * 100 + "%)";
+          }
+        }
+        void boardEl.offsetWidth;
+        eachTile((t) => place(t, false));
+      }
+      function colorsHaveGroup(colors) {
+        const seen = new Set();
+        for (let i = 0; i < colors.length; i++) {
+          if (seen.has(i)) continue;
+          const color = colors[i], stack = [i], comp = [];
+          seen.add(i);
+          while (stack.length) {
+            const cur = stack.pop(); comp.push(cur);
+            const r = Math.floor(cur / COLS), c = cur % COLS;
+            const nb = [];
+            if (r > 0) nb.push(cur - COLS);
+            if (r < ROWS - 1) nb.push(cur + COLS);
+            if (c > 0) nb.push(cur - 1);
+            if (c < COLS - 1) nb.push(cur + 1);
+            nb.forEach((n) => { if (colors[n] === color && !seen.has(n)) { seen.add(n); stack.push(n); } });
+          }
+          if (comp.length >= MIN) return true;
+        }
+        return false;
+      }
+
+      function reshuffle() {
+        const tiles = [];
+        eachTile((t) => tiles.push(t));
+        let colors = tiles.map((t) => t.color);
+        do {
+          for (let i = colors.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = colors[i]; colors[i] = colors[j]; colors[j] = tmp;
+          }
+        } while (!colorsHaveGroup(colors));
+        tiles.forEach((t, i) => {
+          t.color = colors[i];
+          t.el.setAttribute("aria-label", TILE_NAMES[t.color]);
+          t.inner.className = "tile-inner c" + t.color;
+          t.inner.innerHTML = SVG[t.color];
+          t.el.classList.remove("flip"); void t.el.offsetWidth; t.el.classList.add("flip");
+        });
+      }
+
+      /* ---------------- effects ---------------- */
+      function burst(t) {
+        const n = 4;
+        for (let i = 0; i < n; i++) {
+          const p = document.createElement("div");
+          p.className = "particle";
+          const size = 6 + Math.random() * 8;
+          p.style.width = size + "px"; p.style.height = size + "px";
+          p.style.background = "rgba(255,255,255,0.75)";
+          p.style.border = "2px solid " + TILE_COLORS[t.color];
+          p.style.left = ((t.c + 0.5) / COLS * 100) + "%";
+          p.style.top = ((t.r + 0.5) / ROWS * 100) + "%";
+          fxEl.appendChild(p);
+          const ang = Math.random() * Math.PI * 2, dist = 26 + Math.random() * 40;
+          p.animate([
+            { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+            { transform: "translate(calc(-50% + " + Math.cos(ang) * dist + "px), calc(-50% + " + Math.sin(ang) * dist + "px)) scale(0.3)", opacity: 0 }
+          ], { duration: 420 + Math.random() * 200, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => p.remove();
+        }
+      }
+      function revealClean(t) {
+        const d = document.createElement("div");
+        d.className = "clean-dish";
+        d.style.left = (t.c / COLS * 100) + "%";
+        d.style.top = (t.r / ROWS * 100) + "%";
+        d.style.color = TILE_COLORS[t.color];
+        d.innerHTML = SVG_CLEAN[t.color];
+        fxEl.appendChild(d);
+        setTimeout(() => d.remove(), 880);
+      }
+      function confetti() {
+        const wrap = document.getElementById("confetti");
+        for (let i = 0; i < 46; i++) {
+          const p = document.createElement("div");
+          p.className = "confetto";
+          const size = 7 + Math.random() * 8;
+          p.style.width = size + "px"; p.style.height = size * (0.5 + Math.random()) + "px";
+          p.style.background = TILE_COLORS[i % NCOLORS];
+          p.style.left = Math.random() * 100 + "%";
+          wrap.appendChild(p);
+          const drift = (Math.random() - 0.5) * 160;
+          p.animate([
+            { transform: "translate(0,0) rotate(0deg)", opacity: 1 },
+            { transform: "translate(" + drift + "px, " + (window.innerHeight + 40) + "px) rotate(" + (Math.random() * 720 - 360) + "deg)", opacity: 0.9 }
+          ], { duration: 1800 + Math.random() * 1400, delay: Math.random() * 350, easing: "cubic-bezier(.3,.6,.6,1)" }).onfinish = () => p.remove();
+        }
+      }
+
+      let msgTimer = null;
+      function showMsg(text, holdMs) {
+        msgEl.textContent = text;
+        msgEl.classList.remove("pop-in"); void msgEl.offsetWidth; msgEl.classList.add("pop-in");
+        clearTimeout(msgTimer);
+        msgTimer = setTimeout(() => { msgEl.textContent = ""; }, holdMs || 1100);
+      }
+      function floatScore(pts) {
+        const s = document.createElement("div");
+        s.className = "float-score";
+        s.textContent = "+" + pts;
+        document.querySelector(".hud").appendChild(s);
+        s.animate([
+          { transform: "translateY(6px)", opacity: 0 },
+          { transform: "translateY(-4px)", opacity: 1, offset: 0.25 },
+          { transform: "translateY(-26px)", opacity: 0 }
+        ], { duration: 900, easing: "ease-out" }).onfinish = () => s.remove();
+      }
+
+      /* ---------------- hint ---------------- */
+      function clearHint() { eachTile((t) => t.el.classList.remove("hint")); }
+      function resetIdle() {
+        if (!S) return;
+        clearTimeout(S.idleTimer); clearHint();
+        if (S.playing) {
+          S.idleTimer = setTimeout(() => {
+            const groups = allGroups();
+            if (!groups.length || S.busy || !S.playing) return;
+            const g = groups[Math.floor(Math.random() * groups.length)];
+            g.forEach((t) => t.el.classList.add("hint"));
+          }, 7000);
+        }
+      }
+
+      /* ---------------- game flow ---------------- */
+      function updateHUD() {
+        if (S.mode === "time") statNum.textContent = S.score;
+        else statNum.textContent = S.cleared;
+      }
+
+      async function clearGroups(groups, chain) {
+        const seen = new Set(), tiles = [];
+        let pts = 0;
+        groups.forEach((g) => {
+          pts += g.length * g.length;
+          g.forEach((t) => { if (!seen.has(t.id)) { seen.add(t.id); tiles.push(t); } });
+        });
+        pts *= chain;
+        multNum.textContent = "×" + chain;
+        S.cleared += tiles.length;
+        if (chain > S.maxChain) S.maxChain = chain;
+        if (S.mode === "time") { S.score += pts; floatScore(pts); }
+        updateHUD();
+        popSound(chain, tiles.length);
+        tiles.forEach((t) => { burst(t); revealClean(t); t.el.classList.add("pop"); });
+        if (chain >= 2) showMsg(chain + " れんさ！", 1200);
+        else if (tiles.length >= 8) showMsg("ぴかぴか！", 1000);
+        else if (tiles.length >= 6) showMsg("やったね！", 900);
+        await sleep(250);
+        tiles.forEach((t) => { grid[t.r][t.c] = null; t.el.remove(); });
+      }
+
+      function collapse() {
+        const moved = new Set();
+        const newGrid = [];
+        for (let r = 0; r < ROWS; r++) newGrid.push(new Array(COLS).fill(null));
+        const fresh = [];
+        for (let c = 0; c < COLS; c++) {
+          const stack = [];
+          for (let r = ROWS - 1; r >= 0; r--) { const t = grid[r][c]; if (t) stack.push(t); }
+          let writeR = ROWS - 1;
+          for (let i = 0; i < stack.length; i++) {
+            const t = stack[i];
+            if (t.r !== writeR) moved.add(t.id);
+            t.r = writeR; t.c = c; newGrid[writeR][c] = t; writeR--;
+          }
+          const newCount = ROWS - stack.length;
+          for (let i = 0; i < newCount; i++) {
+            const t = createTile(randColor(), writeR, c);
+            t.spawnFrom = writeR - newCount;
+            newGrid[writeR][c] = t; fresh.push(t); moved.add(t.id); writeR--;
+          }
+        }
+        grid = newGrid;
+        fresh.forEach((t) => {
+          boardEl.appendChild(t.el);
+          t.el.style.transition = "none";
+          t.el.style.transform = "translate(" + t.c * 100 + "%, " + t.spawnFrom * 100 + "%)";
+        });
+        void boardEl.offsetWidth;
+        eachTile((t) => { t.el.style.transition = ""; place(t, false); });
+        return moved;
+      }
+
+      function groupKey(g) {
+        return g.map((t) => t.id).sort((a, b) => a - b).join(",");
+      }
+      function snapshotGroups() {
+        const keys = new Set();
+        allGroups().forEach((g) => keys.add(groupKey(g)));
+        return keys;
+      }
+
+      async function settle(beforeKeys) {
+        await sleep(310);
+        while (S.playing || S.timeUp) {
+          // a chain is only a group that did not exist before the last fall:
+          // groups that merely shifted down with the fall do not count
+          const groups = allGroups().filter((g) => !beforeKeys.has(groupKey(g)));
+          if (!groups.length) break;
+          groups.sort((a, b) => b.length - a.length);
+          S.chain++;
+          await clearGroups([groups[0]], S.chain);
+          beforeKeys = snapshotGroups();
+          collapse();
+          await sleep(310);
+          if (!S.playing && !S.timeUp) break;
+        }
+      }
+
+      function finishTurn() {
+        S.busy = false;
+        multNum.textContent = "×1";
+        if (S.timeUp) { endGame(); return; }
+        if (!S.playing) return;
+        if (!hasMoves()) reshuffle();
+        resetIdle();
+      }
+
+      async function onTileTap(tile) {
+        if (!S || !S.playing || S.busy) return;
+        ac();
+        clearTimeout(S.idleTimer); clearHint();
+        const group = groupFrom(tile);
+        if (group.length < MIN) {
+          tone(170, { type: "sine", vol: 0.07, dur: 0.12 });
+          group.forEach((t) => { t.el.classList.remove("wiggle"); void t.el.offsetWidth; t.el.classList.add("wiggle"); });
+          resetIdle();
+          return;
+        }
+        S.busy = true;
+        S.chain = 1;
+        await clearGroups([group], 1);
+        const beforeKeys = snapshotGroups();
+        collapse();
+        await settle(beforeKeys);
+        finishTurn();
+      }
+
+      function tileFromEvent(e) {
+        const el = e.target.closest(".tile");
+        if (!el) return null;
+        const id = Number(el.dataset.id);
+        let found = null;
+        eachTile((t) => { if (t.id === id) found = t; });
+        return found;
+      }
+      boardEl.addEventListener("pointerdown", (e) => {
+        const found = tileFromEvent(e);
+        if (!found) return;
+        e.preventDefault();
+        onTileTap(found);
+      });
+      boardEl.addEventListener("click", (e) => {
+        // keyboard activation (Enter/Space) fires click without pointerdown
+        if (e.detail !== 0) return;
+        const found = tileFromEvent(e);
+        if (found) onTileTap(found);
+      });
+
+      function startTimer() {
+        S.remain = 60;
+        let lastSec = 61;
+        S.timer = setInterval(() => {
+          if (!S || S.mode !== "time" || !S.playing) { if (S && S.timer) clearInterval(S.timer); return; }
+          S.remain = Math.max(0, S.remain - 0.25);
+          const sec = Math.ceil(S.remain);
+          timeNum.textContent = sec;
+          timebar.style.width = (S.remain / 60 * 100) + "%";
+          timeNum.classList.toggle("urgent", sec <= 10 && sec > 0);
+          if (sec !== lastSec) {
+            lastSec = sec;
+            if (sec <= 5 && sec > 0) tone(1250, { type: "square", vol: 0.045, dur: 0.05 });
+          }
+          if (S.remain <= 0) {
+            clearInterval(S.timer);
+            S.timeUp = true;
+            if (!S.busy) endGame();
+          }
+        }, 250);
+      }
+
+      function startGame(mode) {
+        if (S && S.timer) clearInterval(S.timer);
+        if (S) clearTimeout(S.idleTimer);
+        S = {
+          mode: mode, playing: true, busy: true, score: 0, cleared: 0,
+          chain: 0, maxChain: 0, timeUp: false, timer: null, idleTimer: null, remain: 60
+        };
+        ac();
+        showScreen("game");
+        msgEl.textContent = "";
+        if (mode === "time") {
+          statLabel.textContent = "てん";
+          timeStat.style.visibility = "visible";
+          multStat.style.visibility = "visible";
+          multNum.textContent = "×1";
+          timebarWrap.style.visibility = "visible";
+          timeNum.textContent = "60";
+          timeNum.classList.remove("urgent");
+          timebar.style.width = "100%";
+        } else {
+          statLabel.textContent = "あらえた";
+          timeStat.style.visibility = "hidden";
+          multStat.style.visibility = "hidden";
+          timebarWrap.style.visibility = "hidden";
+        }
+        updateHUD();
+        buildBoard();
+        setTimeout(() => {
+          S.busy = false;
+          if (mode === "time") startTimer();
+          resetIdle();
+        }, 380);
+      }
+
+      function starString(n) {
+        let html = "";
+        for (let i = 0; i < 3; i++) html += '<span class="' + (i < n ? "on" : "off") + '">★</span>';
+        return html;
+      }
+
+      function endGame() {
+        if (!S || !S.playing) return;
+        S.playing = false;
+        clearTimeout(S.idleTimer);
+        if (S.timer) clearInterval(S.timer);
+        clearHint();
+        const box = document.getElementById("result-box");
+        const recordEl = document.getElementById("new-record");
+        let stars, praise;
+        if (S.mode === "time") {
+          stars = S.score >= 1800 ? 3 : S.score >= 1000 ? 2 : S.score >= 400 ? 1 : 0;
+          const isRecord = bestScore === null || S.score > bestScore;
+          if (isRecord) bestScore = S.score;
+          recordEl.hidden = !isRecord || S.score === 0;
+          box.innerHTML =
+            '<div><div class="label">てん</div><div class="num">' + S.score + '</div></div>' +
+            '<div><div class="label">きろく</div><div class="num">' + bestScore + '</div></div>' +
+            '<div><div class="label">れんさ</div><div class="num">' + S.maxChain + '</div></div>';
+        } else {
+          stars = S.cleared >= 130 ? 3 : S.cleared >= 70 ? 2 : S.cleared >= 25 ? 1 : 0;
+          recordEl.hidden = true;
+          box.innerHTML =
+            '<div><div class="label">あらえた かず</div><div class="num">' + S.cleared + '</div></div>' +
+            '<div><div class="label">れんさ</div><div class="num">' + S.maxChain + '</div></div>';
+        }
+        praise = stars >= 3 ? "すごい！" : stars === 2 ? "やったね！" : stars === 1 ? "いいね！" : "たのしかったね！";
+        document.getElementById("stars").innerHTML = starString(stars);
+        document.getElementById("praise").textContent = praise;
+        showScreen("end");
+        fanfare();
+        confetti();
+      }
+
+      document.getElementById("btn-free").addEventListener("click", () => startGame("free"));
+      document.getElementById("btn-time").addEventListener("click", () => startGame("time"));
+      document.getElementById("btn-finish").addEventListener("click", () => { if (S && S.playing) { S.timeUp = false; endGame(); } });
+      document.getElementById("btn-again").addEventListener("click", () => startGame(S ? S.mode : "free"));
+      document.getElementById("btn-home").addEventListener("click", () => {
+        if (S && S.timer) clearInterval(S.timer);
+        if (S) { clearTimeout(S.idleTimer); S.playing = false; }
+        showScreen("start");
+      });
+
+    </script>
+  </body>
+</html>

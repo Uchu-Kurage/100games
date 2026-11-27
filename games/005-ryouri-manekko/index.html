@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>りょうり まねっこ</title>
+    <style>
+      button { min-height: 2.75rem; }
+    </style>
+    <style>
+      :root {
+        --bg: #fdf1de;
+        --bg-soft: #ffffff;
+        --ink: #33241a;
+        --ink-soft: #7a5f4d;
+        --line: #eed9bd;
+        --accent: #c25e0a;
+        --accent-ink: #ffffff;
+        --gold: #f5b81e;
+        --shadow: 0 6px 18px rgba(51, 36, 26, 0.14);
+        --pad-red: #ef6a5a;
+        --pad-yellow: #f6bd2f;
+        --pad-green: #4cb96e;
+        --pad-blue: #4a90d9;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #211812;
+          --bg-soft: #2f231b;
+          --ink: #fdf0e2;
+          --ink-soft: #cdb4a0;
+          --line: #4f3828;
+          --accent: #f59e4c;
+          --accent-ink: #241408;
+          --gold: #ffc93c;
+          --shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+          --pad-red: #e05a4a;
+          --pad-yellow: #eaa91f;
+          --pad-green: #3da75e;
+          --pad-blue: #3d7fc4;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .wrap {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 14px 16px 40px;
+      }
+
+      /* ===== 上部：固定高さ（パッドの位置が動かないように） ===== */
+      .top {
+        height: 158px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+        overflow: hidden;
+      }
+      h1.title {
+        margin: 2px 0 0;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .status {
+        margin-top: 8px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 27px;
+        font-weight: 800;
+        line-height: 1.1;
+        white-space: nowrap;
+      }
+      .status.pop { animation: pop 0.45s ease; }
+      @keyframes pop {
+        0% { transform: scale(0.6); }
+        60% { transform: scale(1.18); }
+        100% { transform: scale(1); }
+      }
+      .ear {
+        display: inline-block;
+        margin-right: 8px;
+        animation: sway 0.9s ease-in-out infinite;
+      }
+      @keyframes sway {
+        0%, 100% { transform: rotate(-8deg) scale(1); }
+        50% { transform: rotate(8deg) scale(1.15); }
+      }
+      .rounds {
+        margin-top: 6px;
+        height: 22px;
+        display: flex;
+        gap: 7px;
+        align-items: center;
+        justify-content: center;
+      }
+      .rounds .dot {
+        width: 15px; height: 15px;
+        border-radius: 50%;
+        background: var(--bg-soft);
+        border: 2px solid var(--line);
+        transition: background 0.25s ease, transform 0.25s ease;
+      }
+      .rounds .dot.done {
+        background: var(--gold);
+        border-color: var(--gold);
+        transform: scale(1.12);
+      }
+      .rounds .dot.now {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(194, 94, 10, 0.25);
+      }
+      /* えんどれす：のこりの ミスできる かず */
+      .rounds .dot.life {
+        width: 19px; height: 19px;
+        background: var(--gold);
+        border-color: var(--gold);
+      }
+      .rounds .dot.life.lost {
+        background: transparent;
+        border-color: var(--line);
+        opacity: 0.45;
+        transform: none;
+      }
+      .steps {
+        margin-top: 8px;
+        height: 18px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        justify-content: center;
+      }
+      .steps .sdot {
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: transparent;
+        border: 2px solid var(--ink-soft);
+        opacity: 0.55;
+        transition: all 0.2s ease;
+      }
+      .steps .sdot.on {
+        background: var(--accent);
+        border-color: var(--accent);
+        opacity: 1;
+        transform: scale(1.2);
+      }
+
+      /* ===== パッド ===== */
+      .board {
+        position: relative;
+        margin-top: 6px;
+      }
+      .pads {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .pad {
+        position: relative;
+        border: none;
+        border-radius: 28px;
+        aspect-ratio: 1 / 0.92;
+        min-height: 128px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        color: #fff;
+        box-shadow: var(--shadow), inset 0 -8px 0 rgba(0,0,0,0.14);
+        transition: filter 0.15s ease, transform 0.15s ease, opacity 0.3s ease;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+        padding: 10px;
+      }
+      .pad .face { font-size: 62px; line-height: 1.1; pointer-events: none; }
+      .pad .face-wide { font-size: 46px; letter-spacing: -8px; }
+      .pad .note {
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+        pointer-events: none;
+        opacity: 0.98;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+      }
+      .pad[data-pad="0"] { background: var(--pad-red); }
+      .pad[data-pad="1"] { background: var(--pad-yellow); }
+      .pad[data-pad="2"] { background: var(--pad-green); }
+      .pad[data-pad="3"] { background: var(--pad-blue); }
+      .pads.locked .pad { cursor: default; }
+      .pads.idle .pad { opacity: 0.55; filter: saturate(0.6); }
+      .pad.lit {
+        filter: brightness(1.35) saturate(1.2);
+        transform: scale(1.05);
+      }
+      .pad.bounce { animation: bounce 0.32s ease; }
+      @keyframes bounce {
+        0% { transform: scale(1); }
+        35% { transform: scale(1.09) translateY(-5px); }
+        70% { transform: scale(0.97); }
+        100% { transform: scale(1); }
+      }
+      .pad.shake { animation: shake 0.4s ease; }
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-7px); }
+        50% { transform: translateX(7px); }
+        75% { transform: translateX(-4px); }
+      }
+      .pad.hint {
+        animation: hintglow 1.1s ease-in-out infinite;
+      }
+      @keyframes hintglow {
+        0%, 100% { filter: brightness(1); box-shadow: var(--shadow), inset 0 -8px 0 rgba(0,0,0,0.14); }
+        50% { filter: brightness(1.4); box-shadow: 0 0 0 6px var(--gold), var(--shadow); }
+      }
+
+      /* ===== 操作ボタン：固定高さ ===== */
+      .controls {
+        height: 76px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .btn {
+        border: none;
+        border-radius: 999px;
+        font-family: inherit;
+        font-size: 21px;
+        font-weight: 800;
+        padding: 14px 30px;
+        min-height: 56px;
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        touch-action: manipulation;
+      }
+      .btn-main { background: var(--accent); color: var(--accent-ink); }
+      .btn-sub {
+        background: var(--bg-soft);
+        color: var(--ink);
+        border: 2px solid var(--line);
+        font-size: 18px;
+        padding: 12px 22px;
+      }
+      .btn:active { transform: scale(0.96); }
+      .btn[hidden] { display: none; }
+
+      /* ===== 結果 ===== */
+      .result {
+        text-align: center;
+        padding: 10px 0 4px;
+      }
+      .result[hidden] { display: none; }
+      .result .big { font-size: 34px; font-weight: 800; margin: 4px 0; }
+      .result .stars { font-size: 40px; letter-spacing: 4px; margin: 8px 0 2px; min-height: 48px; }
+      .result .stars .off { opacity: 0.22; filter: grayscale(1); }
+      .result .detail {
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.75;
+        margin-top: 4px;
+      }
+      .result .detail .newbest { color: var(--accent); }
+
+      /* 紙吹雪 */
+      .confetti {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .confetti i {
+        position: absolute;
+        top: -16px;
+        width: 10px; height: 14px;
+        border-radius: 3px;
+        animation: fall linear forwards;
+      }
+      @keyframes fall {
+        to { transform: translateY(560px) rotate(560deg); opacity: 0.9; }
+      }
+
+      /* ===== 保護者向け ===== */
+      .for-parents {
+        margin-top: 44px;
+        background: var(--bg-soft);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 22px 20px 10px;
+        font-family: "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+      }
+      .for-parents h2 {
+        font-size: 19px;
+        margin: 0 0 12px;
+      }
+      .for-parents h3 {
+        font-size: 15.5px;
+        margin: 20px 0 6px;
+      }
+      .for-parents p, .for-parents li {
+        font-size: 14.5px;
+        line-height: 1.85;
+        color: var(--ink);
+      }
+      .for-parents ul { padding-left: 20px; margin: 6px 0; }
+      .for-parents .note {
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .pad.bounce, .pad.shake, .status.pop, .ear { animation: none; }
+        .pad.hint { animation-duration: 2.2s; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <!-- ゲーム本体（表示文字はひらがなのみ） -->
+      <div class="top">
+        <h1 class="title">りょうり まねっこ</h1>
+        <div class="status" id="status">🍳</div>
+        <div class="rounds" id="rounds" aria-hidden="true"></div>
+        <div class="steps" id="steps" aria-hidden="true"></div>
+      </div>
+
+      <div class="board">
+        <div class="pads idle" id="pads">
+          <button class="pad" data-pad="0" aria-label="とんとん やさいを きる ぱっど">
+            <span class="face face-wide">🥕🔪</span><span class="note">とんとん</span>
+          </button>
+          <button class="pad" data-pad="1" aria-label="じゅー ふらいぱんの ぱっど">
+            <span class="face">🍳</span><span class="note">じゅー</span>
+          </button>
+          <button class="pad" data-pad="2" aria-label="ことこと なべの ぱっど">
+            <span class="face">🍲</span><span class="note">ことこと</span>
+          </button>
+          <button class="pad" data-pad="3" aria-label="しゃかしゃか まぜる ぱっど">
+            <span class="face">🥣</span><span class="note">しゃかしゃか</span>
+          </button>
+        </div>
+        <div class="confetti" id="confetti"></div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-main" id="btnStart">はじめる</button>
+        <button class="btn btn-sub" id="btnEndless">えんどれす</button>
+        <button class="btn btn-sub" id="btnListen" hidden>👀 もういちど みる</button>
+      </div>
+
+      <div class="result" id="result" hidden>
+        <div class="big" id="resultBig">やったね！</div>
+        <div class="stars" id="stars"></div>
+        <div class="detail" id="endlessDetail" hidden></div>
+      </div>
+
+      <!-- 保護者向け（通常の日本語） -->
+      <section class="for-parents">
+        <h2>保護者の方へ（教育的観点）</h2>
+        <p>「りょうり まねっこ」は、シェフのお手本の手順を聞いて覚え、同じ順番にタップしてレシピの手順を再現する、まねっこ遊びです。パッドは台所の4つの調理アクションで、トントン（包丁とまな板で野菜を切る）、ジュー（フライパンで焼く）、コトコト（鍋で煮る）、シャカシャカ（ボウルで混ぜる）です。手順は2つから始まり、全8ラウンドで少しずつ長くなります（2・2・3・3・4・4・5・6手順）。</p>
+
+        <h3>この遊びで使う力</h3>
+        <ul>
+          <li><strong>聴覚的な短期記憶と順番の保持</strong>：調理の音の並びを耳で聞き取り、手順の順番を頭の中に保ったまま再現します。「聞く→覚える→真似る」という模倣の一連の流れを使う遊びです。</li>
+          <li><strong>注意と集中</strong>：再生中は「お手本を見る番」、再生後は「自分が作る番」と役割が切り替わるため、相手（ゲーム）の番を待ってよく見て聞く姿勢が自然に求められます。</li>
+          <li><strong>音と色・動きの結びつき</strong>：各パッドは色・調理アクション・音の質感と音階が固定で対応しているので、音だけでなく光と色、「とんとん」「じゅー」といった音の言葉も手がかりにして覚えられます。</li>
+        </ul>
+
+        <h3>「10の姿」との関連</h3>
+        <p>文部科学省が示す「幼児期の終わりまでに育ってほしい10の姿」のうち、「豊かな感性と表現」（調理の音の違いやリズムを感じ取ること）や「思考力の芽生え」（手順の順番を考え、試しながら再現すること）に重なる遊びです。ただし、これは対応づけの目安であり、特定の能力の育成を保証するものではありません。</p>
+
+        <h3>設計の意図</h3>
+        <ul>
+          <li><strong>モチーフは日常の動作（料理）</strong>：切る・焼く・煮る・混ぜるという、台所で実際に見聞きする日常の動作をモチーフにしました。音の順番を真似ることが、そのままレシピの手順を真似ることになる形です。現実の料理にも「手順を覚えて、その通りに手を動かす」という同じ流れがあり、遊びの中の「できた」が、台所でお手伝いをするときの手順への親しみにつながることを狙っています。</li>
+          <li><strong>お手本の見直しは自由</strong>：「もういちど みる」ボタンで、いつでもお手本の手順を再生し直せます。覚えられなかったことを責めるのではなく、お手本を見直して挑戦し直すことを遊びの一部にしています。</li>
+          <li><strong>罰なし・ゲームオーバーなし</strong>：間違えても、お手本の手順が自動でもう一度再生されて再挑戦できます。制限時間もありません。</li>
+          <li><strong>つまずきへの支援</strong>：自分の番で約7秒操作がないと、次に押すパッドがそっと光ってヒントになります。</li>
+          <li><strong>段階づけ</strong>：2手順から始め、ラウンドごとに少しずつ長くすることで、「できた」という経験を積み重ねられるようにしています。</li>
+          <li><strong>大人のための「エンドレス」モード（二層設計）</strong>：通常モードの入口（お手本を見て真似るだけ・見直し自由）はそのままに、大人向けの挑戦として、手順の長さと再生速度が上がり続けるエンドレスモードを用意しました。手順が長くなり続けるフルコースに見立てたモードです。ミスは3回まで許容され、終了時に到達した最長（何手順まで再現できたか）とコース数、そのセッション内でのベストが表示されます。「何手順まで行けるか」に挑む大人の達成感と、子どもの遊びの優しさを分けずに重ねる設計です。</li>
+        </ul>
+
+        <h3>効果についての留保</h3>
+        <p>この遊びで育つのは、あくまで「この遊びの中での、手順の順番を聞いて覚えて真似る力」です。一般的な記憶力や学力の向上をうたうものではありません。お子さんが台所の音や料理の手順に親しみ、「見て、聞いて、真似て、できた」を楽しむきっかけとしてご覧ください。</p>
+        <p class="note">出典：文部科学省「幼児期の終わりまでに育ってほしい10の姿」（幼稚園教育要領等）</p>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ===== 音（調理の音に寄せた音色。音階はパッドごとに固定で区別できる） =====
+        // ぱっど0=とんとん（きる） 1=じゅー（やく） 2=ことこと（にる） 3=しゃかしゃか（まぜる）
+        var FREQS = [329.63, 392.0, 440.0, 523.25]; // み・そ・ら・ど(高)
+        var audioCtx = null;
+        var noiseBuffer = null;
+        function ensureAudio() {
+          if (!audioCtx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) audioCtx = new AC();
+          }
+          if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+        }
+        function getNoiseBuffer() {
+          if (!audioCtx) return null;
+          if (noiseBuffer) return noiseBuffer;
+          var len = audioCtx.sampleRate;
+          noiseBuffer = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+          var data = noiseBuffer.getChannelData(0);
+          for (var n = 0; n < len; n++) data[n] = Math.random() * 2 - 1;
+          return noiseBuffer;
+        }
+        // 短い音色の部品：音程のある音
+        function addTone(type, f0, f1, t, dur, vol) {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(f0, t);
+          if (f1) osc.frequency.exponentialRampToValueAtTime(f1, t + dur);
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(t); osc.stop(t + dur + 0.05);
+        }
+        // 短い音色の部品：ざわざわ・しゅわしゅわしたノイズ
+        function addNoise(t, dur, vol, filterType, freq, q) {
+          var buf = getNoiseBuffer();
+          if (!buf) return;
+          var src = audioCtx.createBufferSource();
+          src.buffer = buf;
+          src.loop = true;
+          var filter = audioCtx.createBiquadFilter();
+          filter.type = filterType;
+          filter.frequency.value = freq;
+          filter.Q.value = q;
+          var gain = audioCtx.createGain();
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+          src.start(t); src.stop(t + dur + 0.05);
+        }
+        function playTone(i, when) {
+          if (!audioCtx) return;
+          var t = when || audioCtx.currentTime;
+          var f = FREQS[i];
+          if (i === 0) {
+            // とんとん：まな板を打つ短いノック＋下がる音程
+            addTone("triangle", f, f * 0.6, t, 0.16, 0.34);
+            addNoise(t, 0.09, 0.2, "bandpass", 1400, 1.2);
+          } else if (i === 1) {
+            // じゅー：油のはねる細かいノイズ（長め）＋下に音程
+            addNoise(t, 0.52, 0.13, "highpass", 3800, 0.7);
+            addNoise(t, 0.52, 0.06, "bandpass", 6200, 2);
+            addTone("sine", f, null, t, 0.5, 0.1);
+          } else if (i === 2) {
+            // ことこと：丸い基本音＋泡がぷくっと上がる小さな音
+            addTone("sine", f, null, t, 0.55, 0.16);
+            for (var b = 0; b < 3; b++) {
+              addTone("sine", f * 0.55, f * 1.05, t + 0.05 + b * 0.13, 0.09, 0.1);
+            }
+          } else {
+            // しゃかしゃか：3回の短いスウィッシュ＋音程
+            for (var s = 0; s < 3; s++) {
+              addNoise(t + s * 0.13, 0.11, 0.15, "bandpass", 1000 + s * 260, 1.5);
+            }
+            addTone("triangle", f, null, t, 0.48, 0.1);
+          }
+        }
+        function playFanfare() {
+          if (!audioCtx) return;
+          var base = audioCtx.currentTime;
+          var seq = [0, 1, 2, 3, 2, 3];
+          for (var k = 0; k < seq.length; k++) playTone(seq[k], base + k * 0.16);
+        }
+        function playSoftMiss() {
+          if (!audioCtx) return;
+          var t = audioCtx.currentTime;
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(220, t);
+          osc.frequency.exponentialRampToValueAtTime(185, t + 0.22);
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(0.12, t + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(t); osc.stop(t + 0.3);
+        }
+
+        // ===== 状態 =====
+        var LENGTHS = [2, 2, 3, 3, 4, 4, 5, 6];
+        var PRAISE = ["やったね！", "すごい！", "できたね！", "じょうず！", "おいしそう！"];
+        var state = "idle"; // idle | showing | input | between | done
+        var mode = "normal"; // normal | endless
+        var round = 0;
+        var sequence = [];
+        var inputPos = 0;
+        var mistakesThisRound = 0;
+        var stars = 0;
+        // えんどれす用：ミスは3回まで、記録はこのセッション内のみ
+        var lives = 3;
+        var endlessMaxLen = 0;   // こなせた いちばん ながい じゅんばん
+        var bestLen = 0;         // セッション内ベスト（最長）
+        var bestRounds = 0;      // セッション内ベスト（ラウンド数）
+        var hintTimer = null;
+        var timers = [];
+
+        // ===== 要素 =====
+        var statusEl = document.getElementById("status");
+        var roundsEl = document.getElementById("rounds");
+        var stepsEl = document.getElementById("steps");
+        var padsEl = document.getElementById("pads");
+        var padEls = Array.prototype.slice.call(document.querySelectorAll(".pad"));
+        var btnStart = document.getElementById("btnStart");
+        var btnEndless = document.getElementById("btnEndless");
+        var btnListen = document.getElementById("btnListen");
+        var resultEl = document.getElementById("result");
+        var resultBigEl = document.getElementById("resultBig");
+        var starsEl = document.getElementById("stars");
+        var endlessDetailEl = document.getElementById("endlessDetail");
+        var confettiEl = document.getElementById("confetti");
+
+        function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+        function clearTimers() {
+          timers.forEach(clearTimeout); timers = [];
+          stopHintTimer(); clearHint();
+        }
+        function setStatus(html, pop) {
+          statusEl.innerHTML = html;
+          if (pop) {
+            statusEl.classList.remove("pop");
+            void statusEl.offsetWidth;
+            statusEl.classList.add("pop");
+          }
+        }
+        function renderRounds() {
+          roundsEl.innerHTML = "";
+          if (mode === "endless" && state !== "idle") {
+            // えんどれす：のこりの ミスできる かずを ドットで
+            for (var j = 0; j < 3; j++) {
+              var ld = document.createElement("span");
+              ld.className = "dot life" + (j < lives ? "" : " lost");
+              roundsEl.appendChild(ld);
+            }
+            return;
+          }
+          for (var i = 0; i < LENGTHS.length; i++) {
+            var d = document.createElement("span");
+            d.className = "dot" + (i < round ? " done" : (i === round && state !== "idle" && state !== "done" ? " now" : ""));
+            roundsEl.appendChild(d);
+          }
+        }
+        function renderSteps() {
+          stepsEl.innerHTML = "";
+          if (state !== "input" && state !== "showing") return;
+          for (var i = 0; i < sequence.length; i++) {
+            var d = document.createElement("span");
+            d.className = "sdot" + (i < inputPos ? " on" : "");
+            stepsEl.appendChild(d);
+          }
+        }
+
+        // ===== ヒント（約7秒 無操作で次のパッドが光る） =====
+        function clearHint() {
+          padEls.forEach(function (p) { p.classList.remove("hint"); });
+        }
+        function stopHintTimer() {
+          if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; }
+        }
+        function armHintTimer() {
+          stopHintTimer(); clearHint();
+          if (state !== "input") return;
+          hintTimer = setTimeout(function () {
+            if (state === "input" && inputPos < sequence.length) {
+              padEls[sequence[inputPos]].classList.add("hint");
+            }
+          }, 7000);
+        }
+
+        // ===== パッドの光と音 =====
+        function lightPad(i, sound) {
+          var p = padEls[i];
+          p.classList.remove("bounce");
+          void p.offsetWidth;
+          p.classList.add("lit", "bounce");
+          if (sound) playTone(i);
+          setTimeout(function () { p.classList.remove("lit"); }, 340);
+        }
+
+        // ===== 順番の再生 =====
+        function playSequence() {
+          clearTimers();
+          state = "showing";
+          inputPos = 0;
+          padsEl.classList.add("locked");
+          padsEl.classList.remove("idle");
+          btnListen.hidden = true;
+          setStatus('<span class="ear">🍳</span>おてほんを みてね');
+          renderRounds(); renderSteps();
+          var stepMs = 780, onDelay = 650;
+          if (mode === "endless") {
+            // ラウンドごとに すこしずつ はやく（下限つき）
+            stepMs = Math.max(360, 780 - round * 50);
+            onDelay = Math.max(420, 650 - round * 30);
+          }
+          sequence.forEach(function (padIdx, k) {
+            later(function () { lightPad(padIdx, true); }, onDelay + k * stepMs);
+          });
+          later(function () {
+            state = "input";
+            padsEl.classList.remove("locked");
+            btnListen.hidden = false;
+            setStatus("まねしてね", true);
+            renderSteps();
+            armHintTimer();
+          }, onDelay + sequence.length * stepMs + 250);
+        }
+
+        function startRound() {
+          // えんどれすは 2てじゅんから 1ずつ ふえつづける
+          var len = mode === "endless" ? round + 2 : LENGTHS[round];
+          sequence = [];
+          for (var i = 0; i < len; i++) sequence.push(Math.floor(Math.random() * 4));
+          mistakesThisRound = 0;
+          playSequence();
+        }
+
+        function roundClear() {
+          state = "between";
+          stopHintTimer(); clearHint();
+          btnListen.hidden = true;
+          padsEl.classList.add("locked");
+          if (mode === "normal" && mistakesThisRound === 0) stars++;
+          if (mode === "endless" && sequence.length > endlessMaxLen) endlessMaxLen = sequence.length;
+          playFanfare();
+          setStatus(PRAISE[Math.floor(Math.random() * PRAISE.length)] + " ⭐", true);
+          round++;
+          renderRounds(); renderSteps();
+          later(function () {
+            if (mode === "normal" && round >= LENGTHS.length) finishAll();
+            else startRound();
+          }, 1500);
+        }
+
+        function finishAll() {
+          state = "done";
+          padsEl.classList.remove("locked");
+          padsEl.classList.add("idle");
+          setStatus("かんせい！ 🎉", true);
+          renderRounds(); renderSteps();
+          var html = "";
+          for (var i = 0; i < LENGTHS.length; i++) {
+            html += '<span class="' + (i < stars ? "" : "off") + '">⭐</span>';
+          }
+          starsEl.innerHTML = html;
+          starsEl.style.display = "";
+          resultBigEl.textContent = "かんせい！";
+          endlessDetailEl.hidden = true;
+          resultEl.hidden = false;
+          btnStart.textContent = "もういちど";
+          btnStart.hidden = false;
+          btnEndless.textContent = "えんどれす";
+          btnEndless.hidden = false;
+          playFanfare();
+          spawnConfetti();
+        }
+
+        function finishEndless() {
+          state = "done";
+          stopHintTimer(); clearHint();
+          btnListen.hidden = true;
+          padsEl.classList.remove("locked");
+          padsEl.classList.add("idle");
+          setStatus("おしまい！", true);
+          renderRounds(); renderSteps();
+          var roundsCleared = round;
+          var isBest = endlessMaxLen > bestLen ||
+            (endlessMaxLen === bestLen && roundsCleared > bestRounds);
+          if (isBest) { bestLen = endlessMaxLen; bestRounds = roundsCleared; }
+          starsEl.innerHTML = "";
+          starsEl.style.display = "none";
+          resultBigEl.textContent = "おつかれさま！";
+          var html = "さいちょう " + endlessMaxLen + " てじゅん<br>" +
+            roundsCleared + " こーす<br>" +
+            "べすと " + bestLen + " てじゅん";
+          if (isBest && endlessMaxLen > 0) html += '<br><span class="newbest">べすと こうしん！</span>';
+          endlessDetailEl.innerHTML = html;
+          endlessDetailEl.hidden = false;
+          resultEl.hidden = false;
+          btnStart.textContent = "はじめる";
+          btnStart.hidden = false;
+          btnEndless.textContent = "もういちど";
+          btnEndless.hidden = false;
+          playFanfare();
+          if (roundsCleared >= 3) spawnConfetti();
+        }
+
+        function spawnConfetti() {
+          confettiEl.innerHTML = "";
+          var colors = ["#ef6a5a", "#f6bd2f", "#4cb96e", "#4a90d9", "#f5b81e"];
+          for (var i = 0; i < 42; i++) {
+            var piece = document.createElement("i");
+            piece.style.left = Math.random() * 100 + "%";
+            piece.style.background = colors[i % colors.length];
+            piece.style.animationDuration = (1.6 + Math.random() * 1.6) + "s";
+            piece.style.animationDelay = (Math.random() * 0.7) + "s";
+            confettiEl.appendChild(piece);
+          }
+          setTimeout(function () { confettiEl.innerHTML = ""; }, 4200);
+        }
+
+        // ===== 子どものタップ =====
+        padEls.forEach(function (p) {
+          p.addEventListener("click", function () {
+            if (state !== "input") return;
+            ensureAudio();
+            var i = parseInt(p.getAttribute("data-pad"), 10);
+            stopHintTimer(); clearHint();
+            if (i === sequence[inputPos]) {
+              lightPad(i, true);
+              inputPos++;
+              renderSteps();
+              if (inputPos >= sequence.length) {
+                state = "between";
+                later(roundClear, 380);
+              } else {
+                armHintTimer();
+              }
+            } else if (mode === "endless") {
+              // えんどれす：ミスは3回まで。のこりは上のドットで見える
+              mistakesThisRound++;
+              lives--;
+              p.classList.remove("shake");
+              void p.offsetWidth;
+              p.classList.add("shake");
+              playSoftMiss();
+              state = "between";
+              renderRounds();
+              if (lives <= 0) {
+                setStatus("おしまい");
+                later(finishEndless, 1000);
+              } else {
+                setStatus("あと " + lives + " かい");
+                later(playSequence, 1200);
+              }
+            } else {
+              // まちがえても罰なし：やさしく知らせて、もう一度再生
+              mistakesThisRound++;
+              p.classList.remove("shake");
+              void p.offsetWidth;
+              p.classList.add("shake");
+              playSoftMiss();
+              state = "between";
+              setStatus("もういちど みようね");
+              later(playSequence, 1100);
+            }
+          });
+        });
+
+        // ===== ボタン =====
+        btnStart.addEventListener("click", function () {
+          ensureAudio();
+          clearTimers();
+          mode = "normal";
+          round = 0; stars = 0;
+          resultEl.hidden = true;
+          btnStart.hidden = true;
+          btnEndless.hidden = true;
+          startRound();
+        });
+        btnEndless.addEventListener("click", function () {
+          ensureAudio();
+          clearTimers();
+          mode = "endless";
+          round = 0; lives = 3; endlessMaxLen = 0;
+          resultEl.hidden = true;
+          btnStart.hidden = true;
+          btnEndless.hidden = true;
+          startRound();
+        });
+        btnListen.addEventListener("click", function () {
+          if (state !== "input") return;
+          ensureAudio();
+          playSequence();
+        });
+
+        renderRounds();
+      })();
+    </script>
+  </body>
+</html>
