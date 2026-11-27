@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>まどふき</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+      * { box-sizing: border-box; }
+      :root {
+        --bg: #e8f3fa;
+        --panel: #ffffff;
+        --ink: #22384a;
+        --ink-soft: #51708a;
+        --accent: #1f8ac0;
+        --accent-ink: #ffffff;
+        --wood: #a97c50;
+        --wood-dark: #8a6238;
+        --gold: #f5a623;
+        --good: #2e9e5b;
+        --shadow: 0 6px 24px rgba(34, 56, 74, .14);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #12222f;
+          --panel: #1b3245;
+          --ink: #eaf4fb;
+          --ink-soft: #a9c4d6;
+          --accent: #3aa7dd;
+          --wood: #7d5a36;
+          --wood-dark: #5f4426;
+          --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        }
+      }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .wrap { max-width: 640px; margin: 0 auto; padding: 10px 12px 40px; }
+
+      /* ===== 上部エリア（固定高さ：窓の位置が動かない） ===== */
+      .top {
+        height: 148px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 8px 6px 4px; overflow: hidden;
+      }
+      .pct-box { min-width: 150px; }
+      .pct-label { font-size: 15px; color: var(--ink-soft); font-weight: 700; letter-spacing: .05em; }
+      .pct { font-size: 62px; font-weight: 800; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+      .pct small { font-size: 34px; }
+      .info { text-align: right; }
+      .scene-name { font-size: 30px; font-weight: 800; line-height: 1.15; }
+      .sub-line { font-size: 17px; color: var(--ink-soft); font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; min-height: 24px; }
+      .sub-line .big { color: var(--ink); font-size: 21px; }
+
+      /* ===== 窓 ===== */
+      .window-frame {
+        background: linear-gradient(160deg, var(--wood), var(--wood-dark));
+        border-radius: 18px;
+        padding: 14px;
+        box-shadow: var(--shadow);
+      }
+      .pane {
+        position: relative;
+        aspect-ratio: 4 / 3;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #bfe3f5;
+        box-shadow: inset 0 0 0 3px rgba(0,0,0,.12);
+      }
+      .scene { position: absolute; inset: 0; transition: filter .8s ease; }
+      .scene svg { width: 100%; height: 100%; display: block; }
+      .pane.done .scene { filter: brightness(1.14) saturate(1.12); }
+      canvas.fog, canvas.hint { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      canvas.fog { touch-action: none; cursor: pointer; }
+      canvas.hint { pointer-events: none; }
+      .mullion-v, .mullion-h {
+        position: absolute; background: linear-gradient(160deg, var(--wood), var(--wood-dark));
+        pointer-events: none; z-index: 5;
+      }
+      .mullion-v { top: 0; bottom: 0; left: 50%; width: 12px; transform: translateX(-50%); }
+      .mullion-h { left: 0; right: 0; top: 50%; height: 12px; transform: translateY(-50%); }
+      .pane-shine {
+        position: absolute; inset: 0; pointer-events: none; z-index: 6; opacity: 0;
+        background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.5) 48%, transparent 62%);
+        transition: opacity .5s;
+      }
+      .pane.done .pane-shine { opacity: 1; }
+
+      /* ===== 操作ボタン ===== */
+      .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+      .btn {
+        font-family: inherit; font-weight: 800; font-size: 19px;
+        border: none; border-radius: 999px; padding: 12px 22px; min-height: 52px;
+        background: var(--panel); color: var(--ink); box-shadow: var(--shadow); cursor: pointer;
+      }
+      .btn:active { transform: scale(.96); }
+      .btn.primary { background: var(--accent); color: var(--accent-ink); }
+      .btn.mode-on { background: var(--accent); color: var(--accent-ink); }
+      .btn:disabled { opacity: .45; }
+
+      /* ===== 結果パネル ===== */
+      .overlay {
+        position: fixed; inset: 0; z-index: 60; display: none;
+        align-items: center; justify-content: center; padding: 18px;
+        background: rgba(20, 35, 48, .45);
+      }
+      .overlay.show { display: flex; }
+      .card {
+        background: var(--panel); color: var(--ink); border-radius: 22px; box-shadow: var(--shadow);
+        padding: 26px 28px; text-align: center; max-width: 420px; width: 100%;
+      }
+      .card .cheer { font-size: 34px; font-weight: 800; }
+      .stars { font-size: 46px; color: var(--gold); letter-spacing: .08em; margin: 6px 0 2px; min-height: 56px; }
+      .stars .off { color: var(--ink-soft); opacity: .35; }
+      .card .detail { font-size: 19px; font-weight: 700; color: var(--ink-soft); line-height: 1.7; font-variant-numeric: tabular-nums; }
+      .card .detail .big { color: var(--ink); font-size: 24px; }
+      .card .btn { margin-top: 16px; }
+
+      #confetti { position: fixed; inset: 0; z-index: 55; pointer-events: none; display: none; }
+
+      /* ===== 保護者向け ===== */
+      .for-parents {
+        margin-top: 44px; background: var(--panel); border-radius: 16px; box-shadow: var(--shadow);
+        padding: 22px 22px 10px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      .for-parents h2 { font-size: 19px; margin: 0 0 10px; }
+      .for-parents p, .for-parents li { font-size: 14.5px; line-height: 1.85; color: var(--ink); }
+      .for-parents ul { padding-left: 20px; margin: 6px 0 12px; }
+      .for-parents .note { color: var(--ink-soft); font-size: 13.5px; }
+
+      @media (max-width: 480px) {
+        .top { height: 138px; }
+        .pct { font-size: 52px; }
+        .pct small { font-size: 28px; }
+        .scene-name { font-size: 25px; }
+        .sub-line { font-size: 15px; }
+        .btn { font-size: 17px; padding: 11px 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <!-- 上部：固定高さ -->
+      <div class="top">
+        <div class="pct-box">
+          <div class="pct-label">ふけた わりあい</div>
+          <div class="pct"><span id="pctNum">0</span><small>%</small></div>
+        </div>
+        <div class="info">
+          <div class="scene-name" id="sceneName">さくら</div>
+          <div class="sub-line" id="subLine">ゆびで なぞって ふこう</div>
+        </div>
+      </div>
+
+      <!-- 窓 -->
+      <div class="window-frame">
+        <div class="pane" id="pane">
+          <div class="scene" id="scene"></div>
+          <canvas class="fog" id="fog"></canvas>
+          <canvas class="hint" id="hint"></canvas>
+          <div class="mullion-v"></div>
+          <div class="mullion-h"></div>
+          <div class="pane-shine"></div>
+        </div>
+      </div>
+
+      <!-- 操作 -->
+      <div class="controls">
+        <button class="btn mode-on" id="modeFree" type="button">じゆう</button>
+        <button class="btn" id="modeAttack" type="button">60びょう</button>
+        <button class="btn" id="resetBtn" type="button">はじめから</button>
+      </div>
+
+      <!-- 保護者向け -->
+      <section class="for-parents">
+        <h2>保護者の方へ</h2>
+        <p>「まどふき」は、くもった窓を指でなぞって拭き、下の景色を少しずつ見えるようにするおそうじ遊びです。拭いた割合が数字で大きく表示されるので、「あと少し」が目で分かり、最後までやり切る経験につながります。</p>
+        <ul>
+          <li><strong>微細運動</strong>：指先を狙った場所へ滑らせる動きは、手や指のコントロールの練習になります。</li>
+          <li><strong>持続する注意</strong>：拭き残しを探して画面全体を見渡すことで、注意を持続させる遊びになっています。</li>
+          <li><strong>変化の観察</strong>：「汚れ→きれい」へ少しずつ変わる様子を見て、自分の行動が結果を変えることを体感できます。</li>
+          <li><strong>罰なし設計</strong>：間違いや失敗はなく、制限時間のない「じゆう」モードが基本です。「60びょう」モードは、お子さんが望む場合の任意の挑戦として用意しています。</li>
+        </ul>
+        <p class="note">※これらは遊びの設計意図であり、発達への効果を保証するものではありません。お子さんのペースで、無理のない範囲でお楽しみください。約7秒間操作がないと、拭き残しの場所がうっすら光ってヒントになります。ベスト記録（最速タイム・最高スコア）はこのブラウザ内に保存され、次回開いたときも表示されます。保存できない環境では、その回だけの記録として動作します。</p>
+      </section>
+    </main>
+
+    <!-- 結果パネル -->
+    <div class="overlay" id="overlay">
+      <div class="card">
+        <div class="cheer" id="cheerText">ぴかぴか！</div>
+        <div class="stars" id="starRow"></div>
+        <div class="detail" id="detailText"></div>
+        <button class="btn primary" id="nextBtn" type="button">つぎの まど</button>
+      </div>
+    </div>
+
+    <canvas id="confetti"></canvas>
+
+    <script>
+    (function () {
+      "use strict";
+
+      /* ============ 場面（景色） ============ */
+      var SCENES = [
+        {
+          name: "さくら",
+          svg: '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs><linearGradient id="sk1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5dcff"/><stop offset="1" stop-color="#ffedf4"/></linearGradient></defs>' +
+            '<rect width="400" height="300" fill="url(#sk1)"/>' +
+            '<circle cx="52" cy="46" r="24" fill="#ffd94d"/><circle cx="52" cy="46" r="34" fill="#ffd94d" opacity=".3"/>' +
+            '<ellipse cx="330" cy="52" rx="42" ry="14" fill="#ffffff" opacity=".9"/><ellipse cx="300" cy="44" rx="26" ry="12" fill="#ffffff" opacity=".9"/>' +
+            '<rect y="228" width="400" height="72" fill="#7cc463"/>' +
+            '<path d="M238 232 C244 190 240 160 226 128 L244 124 C256 158 258 192 254 232 Z" fill="#8a5a3b"/>' +
+            '<g fill="#ffb7d5"><circle cx="205" cy="92" r="34"/><circle cx="248" cy="76" r="38"/><circle cx="282" cy="104" r="30"/><circle cx="232" cy="116" r="30"/></g>' +
+            '<g fill="#ff9ec7"><circle cx="222" cy="88" r="14"/><circle cx="262" cy="98" r="12"/><circle cx="244" cy="70" r="11"/></g>' +
+            '<g fill="#ffc9de"><ellipse cx="90" cy="150" rx="7" ry="4" transform="rotate(-24 90 150)"/><ellipse cx="150" cy="196" rx="7" ry="4" transform="rotate(18 150 196)"/><ellipse cx="320" cy="170" rx="7" ry="4" transform="rotate(-14 320 170)"/><ellipse cx="60" cy="230" rx="7" ry="4" transform="rotate(30 60 230)"/><ellipse cx="350" cy="222" rx="7" ry="4" transform="rotate(-30 350 222)"/></g>' +
+            '<g stroke="#4da53f" stroke-width="4" stroke-linecap="round"><path d="M40 268 q3 -12 8 -16"/><path d="M56 270 q-2 -12 -8 -16"/><path d="M360 272 q3 -12 8 -16"/><path d="M120 276 q3 -10 7 -14"/></g>' +
+            '</svg>'
+        },
+        {
+          name: "うみ",
+          svg: '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs><linearGradient id="sk2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd8ff"/><stop offset="1" stop-color="#e6f9ff"/></linearGradient></defs>' +
+            '<rect width="400" height="140" fill="url(#sk2)"/>' +
+            '<circle cx="342" cy="42" r="24" fill="#ffd94d"/><circle cx="342" cy="42" r="34" fill="#ffd94d" opacity=".3"/>' +
+            '<ellipse cx="86" cy="48" rx="44" ry="14" fill="#ffffff"/><ellipse cx="118" cy="40" rx="26" ry="12" fill="#ffffff"/>' +
+            '<rect y="128" width="400" height="118" fill="#2e9fd8"/>' +
+            '<g stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"><path d="M20 160 q14 -10 28 0 q14 10 28 0"/><path d="M150 190 q14 -10 28 0 q14 10 28 0"/><path d="M268 156 q14 -10 28 0 q14 10 28 0"/><path d="M60 214 q14 -10 28 0 q14 10 28 0"/><path d="M300 216 q14 -10 28 0 q14 10 28 0"/></g>' +
+            '<path d="M196 178 L252 178 L240 200 L208 200 Z" fill="#c96f2e"/>' +
+            '<rect x="222" y="132" width="5" height="48" fill="#8a5a3b"/>' +
+            '<path d="M230 136 L230 172 L258 172 Z" fill="#ffffff"/><path d="M219 142 L219 172 L198 172 Z" fill="#ff8a5c"/>' +
+            '<rect y="244" width="400" height="56" fill="#f7e3ac"/>' +
+            '<path d="M52 272 l5 10 11 1 -8 8 2 11 -10 -5 -10 5 2 -11 -8 -8 11 -1 Z" fill="#ff9d5c"/>' +
+            '<ellipse cx="330" cy="278" rx="14" ry="8" fill="#ffb7d5"/><path d="M318 278 a12 8 0 0 1 24 0" fill="#ff9ec7"/>' +
+            '</svg>'
+        },
+        {
+          name: "ゆき",
+          svg: '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs><linearGradient id="sk3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe7fa"/><stop offset="1" stop-color="#ffffff"/></linearGradient></defs>' +
+            '<rect width="400" height="300" fill="url(#sk3)"/>' +
+            '<circle cx="56" cy="44" r="22" fill="#fff3b0"/><circle cx="56" cy="44" r="32" fill="#fff3b0" opacity=".35"/>' +
+            '<rect y="216" width="400" height="84" fill="#ffffff"/>' +
+            '<ellipse cx="110" cy="238" rx="70" ry="10" fill="#dceefb"/><ellipse cx="310" cy="256" rx="80" ry="10" fill="#dceefb"/>' +
+            '<g><path d="M316 210 L346 138 L376 210 Z" fill="#3f9e63"/><path d="M322 168 L346 112 L370 168 Z" fill="#357f52"/><rect x="341" y="208" width="10" height="18" fill="#8a5a3b"/><path d="M322 168 L346 112 L370 168 Z" fill="#ffffff" opacity=".55"/></g>' +
+            '<g><circle cx="150" cy="238" r="30" fill="#ffffff" stroke="#c9dcea" stroke-width="3"/><circle cx="150" cy="192" r="21" fill="#ffffff" stroke="#c9dcea" stroke-width="3"/>' +
+            '<circle cx="143" cy="188" r="3" fill="#22384a"/><circle cx="157" cy="188" r="3" fill="#22384a"/>' +
+            '<path d="M150 196 L168 201 L150 205 Z" fill="#ff8a3c"/>' +
+            '<rect x="128" y="168" width="44" height="8" rx="4" fill="#e34a5e"/><rect x="140" y="204" width="20" height="16" rx="6" fill="#e34a5e"/>' +
+            '<circle cx="150" cy="230" r="3.4" fill="#22384a"/><circle cx="150" cy="244" r="3.4" fill="#22384a"/></g>' +
+            '<g fill="#ffffff"><circle cx="40" cy="110" r="4"/><circle cx="110" cy="70" r="3.4"/><circle cx="200" cy="120" r="4"/><circle cx="262" cy="66" r="3.4"/><circle cx="330" cy="96" r="4"/><circle cx="376" cy="150" r="3.4"/><circle cx="70" cy="170" r="3.4"/><circle cx="230" cy="180" r="3"/></g>' +
+            '</svg>'
+        },
+        {
+          name: "にじ",
+          svg: '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs><linearGradient id="sk4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fdcff"/><stop offset="1" stop-color="#eafaff"/></linearGradient></defs>' +
+            '<rect width="400" height="300" fill="url(#sk4)"/>' +
+            '<circle cx="46" cy="42" r="22" fill="#ffd94d"/><circle cx="46" cy="42" r="32" fill="#ffd94d" opacity=".3"/>' +
+            '<g fill="none" stroke-linecap="round"><path d="M70 236 A130 130 0 0 1 330 236" stroke="#ff6b6b" stroke-width="13"/><path d="M84 236 A116 116 0 0 1 316 236" stroke="#ffa94d" stroke-width="13"/><path d="M98 236 A102 102 0 0 1 302 236" stroke="#ffd94d" stroke-width="13"/><path d="M112 236 A88 88 0 0 1 288 236" stroke="#69db7c" stroke-width="13"/><path d="M126 236 A74 74 0 0 1 274 236" stroke="#4dabf7" stroke-width="13"/></g>' +
+            '<path d="M0 236 Q110 208 220 234 T400 230 V300 H0 Z" fill="#7cc463"/>' +
+            '<path d="M0 262 Q140 240 400 258 V300 H0 Z" fill="#63b34e"/>' +
+            '<ellipse cx="66" cy="238" rx="36" ry="15" fill="#ffffff"/><ellipse cx="94" cy="230" rx="24" ry="13" fill="#ffffff"/>' +
+            '<ellipse cx="330" cy="238" rx="36" ry="15" fill="#ffffff"/><ellipse cx="302" cy="230" rx="24" ry="13" fill="#ffffff"/>' +
+            '<g><circle cx="140" cy="272" r="5" fill="#ff6b6b"/><circle cx="168" cy="282" r="5" fill="#ffd94d"/><circle cx="238" cy="274" r="5" fill="#ff9ec7"/><circle cx="272" cy="284" r="5" fill="#ffffff"/><circle cx="96" cy="284" r="5" fill="#ffa94d"/></g>' +
+            '</svg>'
+        }
+      ];
+
+      /* ============ 要素 ============ */
+      var pane = document.getElementById("pane");
+      var sceneEl = document.getElementById("scene");
+      var fog = document.getElementById("fog");
+      var hint = document.getElementById("hint");
+      var fctx = fog.getContext("2d");
+      var hctx = hint.getContext("2d");
+      var pctNum = document.getElementById("pctNum");
+      var sceneName = document.getElementById("sceneName");
+      var subLine = document.getElementById("subLine");
+      var overlay = document.getElementById("overlay");
+      var cheerText = document.getElementById("cheerText");
+      var starRow = document.getElementById("starRow");
+      var detailText = document.getElementById("detailText");
+      var nextBtn = document.getElementById("nextBtn");
+      var modeFreeBtn = document.getElementById("modeFree");
+      var modeAttackBtn = document.getElementById("modeAttack");
+      var resetBtn = document.getElementById("resetBtn");
+      var confettiCv = document.getElementById("confetti");
+      var cctx = confettiCv.getContext("2d");
+
+      /* ============ 状態 ============ */
+      var BEST_KEY = "madofuki-best-v1";
+      var best = loadBest();
+      var mode = "free";               // "free" | "attack"
+      var sceneIdx = Math.floor(Math.random() * SCENES.length);
+      var wipedPct = 0;
+      var completed = false;
+      var startAt = null;              // この窓を拭き始めた時刻
+      var lastActiveAt = Date.now();
+      var hintOn = false;
+      var attack = { running: false, endsAt: 0, windows: 0, totalPct: 0, timerId: null };
+      var W = 0, H = 0;                // canvas 実ピクセル
+
+      function loadBest() {
+        try {
+          var raw = window.localStorage.getItem(BEST_KEY);
+          if (raw) { var o = JSON.parse(raw); return { free: o.free || null, attack: o.attack || null }; }
+        } catch (e) { /* 保存できない環境ではセッション内ベスト */ }
+        return { free: null, attack: null };
+      }
+      function saveBest() {
+        try { window.localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) { /* その回のみ保持 */ }
+      }
+
+      /* ============ 音（Web Audio） ============ */
+      var actx = null, lastSqueak = 0;
+      function ensureAudio() {
+        if (!actx) {
+          try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+        }
+        if (actx && actx.state === "suspended") { actx.resume(); }
+      }
+      function squeak(speed) {
+        if (!actx) return;
+        var now = actx.currentTime;
+        if (now - lastSqueak < 0.07) return;
+        lastSqueak = now;
+        var dur = 0.09;
+        var len = Math.floor(actx.sampleRate * dur);
+        var buf = actx.createBuffer(1, len, actx.sampleRate);
+        var d = buf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+        var src = actx.createBufferSource(); src.buffer = buf;
+        var bp = actx.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 9;
+        var base = 1350 + Math.min(speed * 0.9, 950);
+        bp.frequency.setValueAtTime(base + 520, now);
+        bp.frequency.exponentialRampToValueAtTime(Math.max(base - 320, 480), now + dur);
+        var g = actx.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        src.connect(bp); bp.connect(g); g.connect(actx.destination);
+        src.start(now); src.stop(now + dur + 0.03);
+      }
+      function fanfare() {
+        if (!actx) return;
+        var notes = [523.25, 659.25, 783.99, 1046.5];
+        var t0 = actx.currentTime;
+        notes.forEach(function (f, i) {
+          var o = actx.createOscillator(), g = actx.createGain();
+          o.type = "triangle"; o.frequency.value = f;
+          var t = t0 + i * 0.1;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.28, t + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+          o.connect(g); g.connect(actx.destination);
+          o.start(t); o.stop(t + 0.45);
+        });
+      }
+      function popSound() {
+        if (!actx) return;
+        var t = actx.currentTime;
+        var o = actx.createOscillator(), g = actx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(660, t);
+        o.frequency.exponentialRampToValueAtTime(990, t + 0.08);
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t); o.stop(t + 0.13);
+      }
+
+      /* ============ くもり描画 ============ */
+      function paintFog() {
+        fctx.save();
+        fctx.globalCompositeOperation = "source-over";
+        var grad = fctx.createLinearGradient(0, 0, W * 0.3, H);
+        grad.addColorStop(0, "rgba(238,246,251,0.97)");
+        grad.addColorStop(0.55, "rgba(214,230,242,0.97)");
+        grad.addColorStop(1, "rgba(196,218,236,0.97)");
+        fctx.fillStyle = grad;
+        fctx.fillRect(0, 0, W, H);
+        // 水滴としずくの跡
+        var i, x, y, r;
+        for (i = 0; i < 260; i++) {
+          x = Math.random() * W; y = Math.random() * H; r = 1 + Math.random() * (W * 0.006);
+          fctx.beginPath(); fctx.arc(x, y, r, 0, Math.PI * 2);
+          fctx.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,0.5)" : "rgba(160,190,215,0.4)";
+          fctx.fill();
+        }
+        for (i = 0; i < 22; i++) {
+          x = Math.random() * W; y = Math.random() * H * 0.5;
+          var len = H * (0.08 + Math.random() * 0.16);
+          fctx.beginPath();
+          fctx.moveTo(x, y); fctx.lineTo(x + (Math.random() * 6 - 3), y + len);
+          fctx.strokeStyle = "rgba(255,255,255,0.35)";
+          fctx.lineWidth = 2 + Math.random() * 3; fctx.lineCap = "round"; fctx.stroke();
+        }
+        fctx.restore();
+      }
+
+      function sizeCanvases() {
+        var rect = pane.getBoundingClientRect();
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = Math.max(50, Math.round(rect.width * dpr));
+        H = Math.max(50, Math.round(rect.height * dpr));
+        fog.width = W; fog.height = H;
+        hint.width = W; hint.height = H;
+        paintFog();
+        wipedPct = 0; pctNum.textContent = "0";
+        sampleDirty = true;
+      }
+
+      /* ============ 割合サンプリング ============ */
+      var sampleCv = document.createElement("canvas");
+      sampleCv.width = 48; sampleCv.height = 36;
+      var sctx = sampleCv.getContext("2d", { willReadFrequently: true });
+      var sampleDirty = true;
+      function samplePct() {
+        sctx.clearRect(0, 0, 48, 36);
+        sctx.drawImage(fog, 0, 0, 48, 36);
+        var img;
+        try { img = sctx.getImageData(0, 0, 48, 36).data; } catch (e) { return; }
+        var clear = 0, total = 48 * 36;
+        for (var i = 3; i < img.length; i += 4) { if (img[i] < 110) clear++; }
+        wipedPct = Math.round((clear / total) * 1000) / 10;
+        pctNum.textContent = String(Math.floor(wipedPct));
+        if (!completed && wipedPct >= 95) onComplete();
+      }
+      setInterval(function () { if (sampleDirty && !overlay.classList.contains("show")) { samplePct(); sampleDirty = false; } }, 220);
+
+      /* ============ ヒント（拭き残しの発光） ============ */
+      var hintRaf = null, hintPhase = 0;
+      function drawHints() {
+        hctx.clearRect(0, 0, W, H);
+        if (!hintOn) { hintRaf = null; return; }
+        sctx.clearRect(0, 0, 48, 36);
+        sctx.drawImage(fog, 0, 0, 48, 36);
+        var img;
+        try { img = sctx.getImageData(0, 0, 48, 36).data; } catch (e) { hintRaf = null; return; }
+        var cols = 6, rows = 5, cw = 48 / cols, ch = 36 / rows;
+        var a = 0.10 + 0.09 * (0.5 + 0.5 * Math.sin(hintPhase));
+        for (var gy = 0; gy < rows; gy++) {
+          for (var gx = 0; gx < cols; gx++) {
+            var foggy = 0, n = 0, px, py;
+            for (py = Math.floor(gy * ch); py < (gy + 1) * ch; py++) {
+              for (px = Math.floor(gx * cw); px < (gx + 1) * cw; px++) {
+                if (img[(py * 48 + px) * 4 + 3] >= 110) foggy++;
+                n++;
+              }
+            }
+            if (foggy / n > 0.55) {
+              var cx = ((gx + 0.5) / cols) * W, cy = ((gy + 0.5) / rows) * H;
+              var rad = Math.min(W / cols, H / rows) * 0.62;
+              var g = hctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+              g.addColorStop(0, "rgba(255,232,130," + a + ")");
+              g.addColorStop(1, "rgba(255,232,130,0)");
+              hctx.fillStyle = g;
+              hctx.beginPath(); hctx.arc(cx, cy, rad, 0, Math.PI * 2); hctx.fill();
+            }
+          }
+        }
+        hintPhase += 0.07;
+        hintRaf = requestAnimationFrame(drawHints);
+      }
+      function setHint(on) {
+        if (on === hintOn) return;
+        hintOn = on;
+        if (on) { if (!hintRaf) hintRaf = requestAnimationFrame(drawHints); }
+        else { hctx.clearRect(0, 0, W, H); }
+      }
+      setInterval(function () {
+        var idle = Date.now() - lastActiveAt > 7000;
+        setHint(idle && !completed && !overlay.classList.contains("show"));
+      }, 500);
+
+      /* ============ 拭く操作 ============ */
+      var drawing = false, lastPt = null, lastMoveAt = 0;
+      function ptFromEvent(e) {
+        var rect = fog.getBoundingClientRect();
+        return { x: (e.clientX - rect.left) / rect.width * W, y: (e.clientY - rect.top) / rect.height * H };
+      }
+      function brushR() { return Math.max(16, W * 0.058); }
+      function eraseAt(p) {
+        fctx.save();
+        fctx.globalCompositeOperation = "destination-out";
+        fctx.beginPath(); fctx.arc(p.x, p.y, brushR(), 0, Math.PI * 2);
+        fctx.fillStyle = "rgba(0,0,0,1)"; fctx.fill();
+        fctx.restore();
+      }
+      function eraseLine(a, b) {
+        fctx.save();
+        fctx.globalCompositeOperation = "destination-out";
+        fctx.strokeStyle = "rgba(0,0,0,1)";
+        fctx.lineWidth = brushR() * 2; fctx.lineCap = "round"; fctx.lineJoin = "round";
+        fctx.beginPath(); fctx.moveTo(a.x, a.y); fctx.lineTo(b.x, b.y); fctx.stroke();
+        fctx.restore();
+      }
+      fog.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        ensureAudio();
+        if (completed || overlay.classList.contains("show")) return;
+        drawing = true;
+        try { fog.setPointerCapture(e.pointerId); } catch (err) {}
+        var p = ptFromEvent(e);
+        lastPt = p; lastMoveAt = performance.now();
+        eraseAt(p);
+        sampleDirty = true;
+        markActive();
+        if (!startAt) startAt = Date.now();
+        if (mode === "attack" && !attack.running) startAttack();
+      });
+      fog.addEventListener("pointermove", function (e) {
+        if (!drawing || completed) return;
+        var p = ptFromEvent(e);
+        var now = performance.now();
+        var dt = Math.max(now - lastMoveAt, 1);
+        var dist = Math.hypot(p.x - lastPt.x, p.y - lastPt.y);
+        if (dist > 1) {
+          eraseLine(lastPt, p);
+          squeak(dist / dt * 1000 / (window.devicePixelRatio || 1));
+          sampleDirty = true;
+          markActive();
+        }
+        lastPt = p; lastMoveAt = now;
+      });
+      function endDraw() { drawing = false; lastPt = null; }
+      fog.addEventListener("pointerup", endDraw);
+      fog.addEventListener("pointercancel", endDraw);
+      function markActive() { lastActiveAt = Date.now(); setHint(false); }
+
+      /* ============ 上部の表示 ============ */
+      function fmtSec(s) { return String(Math.round(s)); }
+      setInterval(function () {
+        if (overlay.classList.contains("show")) return;
+        if (mode === "attack") {
+          if (attack.running) {
+            var left = Math.max(0, Math.ceil((attack.endsAt - Date.now()) / 1000));
+            subLine.innerHTML = "のこり <span class='big'>" + left + " びょう</span>　" + attack.windows + " まい";
+          } else {
+            subLine.innerHTML = best.attack
+              ? "ゆびで なぞると はじまるよ　ベスト <span class='big'>" + best.attack + " てん</span>"
+              : "ゆびで なぞると はじまるよ";
+          }
+        } else {
+          if (startAt && !completed) {
+            var el = (Date.now() - startAt) / 1000;
+            subLine.innerHTML = "<span class='big'>" + fmtSec(el) + " びょう</span>" +
+              (best.free ? "　いちばん はやい <span class='big'>" + fmtSec(best.free) + " びょう</span>" : "");
+          } else if (!completed) {
+            subLine.innerHTML = best.free
+              ? "いちばん はやい <span class='big'>" + fmtSec(best.free) + " びょう</span>"
+              : "ゆびで なぞって ふこう";
+          }
+        }
+      }, 250);
+
+      /* ============ 完成 ============ */
+      function starsHtml(n) {
+        var s = "";
+        for (var i = 0; i < 3; i++) s += i < n ? "★" : "<span class='off'>★</span>";
+        return s;
+      }
+      function onComplete() {
+        completed = true;
+        setHint(false);
+        pane.classList.add("done");
+        samplePct();
+        if (mode === "attack" && attack.running) {
+          attack.windows++;
+          attack.totalPct += wipedPct;
+          popSound();
+          burstConfetti(45);
+          setTimeout(function () { if (attack.running) nextScene(); }, 850);
+          return;
+        }
+        var secs = startAt ? (Date.now() - startAt) / 1000 : 0;
+        var stars = 1;
+        if (wipedPct >= 98 && secs <= 45) stars = 3;
+        else if (wipedPct >= 97 || secs <= 75) stars = 2;
+        var isBest = false;
+        if (!best.free || secs < best.free) { best.free = Math.round(secs * 10) / 10; saveBest(); isBest = true; }
+        cheerText.textContent = "ぴかぴか！";
+        starRow.innerHTML = starsHtml(stars);
+        detailText.innerHTML =
+          "<span class='big'>" + fmtSec(secs) + " びょう</span> で できた<br>" +
+          "ふけた わりあい <span class='big'>" + Math.floor(wipedPct) + "%</span>" +
+          (isBest ? "<br>いちばん はやい きろく！" : "<br>いちばん はやい <span class='big'>" + fmtSec(best.free) + " びょう</span>");
+        nextBtn.textContent = "つぎの まど";
+        fanfare();
+        burstConfetti(130);
+        setTimeout(function () { overlay.classList.add("show"); }, 650);
+      }
+
+      /* ============ 60びょうモード ============ */
+      function startAttack() {
+        attack.running = true;
+        attack.endsAt = Date.now() + 60000;
+        attack.windows = 0;
+        attack.totalPct = 0;
+        if (attack.timerId) clearInterval(attack.timerId);
+        attack.timerId = setInterval(function () {
+          if (Date.now() >= attack.endsAt) endAttack();
+        }, 200);
+      }
+      function stopAttackTimer() {
+        attack.running = false;
+        if (attack.timerId) { clearInterval(attack.timerId); attack.timerId = null; }
+      }
+      function endAttack() {
+        stopAttackTimer();
+        if (!completed) attack.totalPct += wipedPct;
+        var score = attack.windows * 1000 + Math.round(attack.totalPct);
+        var stars = score >= 2500 ? 3 : (score >= 1200 ? 2 : 1);
+        var isBest = false;
+        if (!best.attack || score > best.attack) { best.attack = score; saveBest(); isBest = true; }
+        completed = true;
+        pane.classList.add("done");
+        cheerText.textContent = "おつかれさま！";
+        starRow.innerHTML = starsHtml(stars);
+        detailText.innerHTML =
+          "<span class='big'>" + attack.windows + " まい</span> ふけた<br>" +
+          "スコア <span class='big'>" + score + " てん</span>" +
+          (isBest ? "<br>いちばん たかい きろく！" : "<br>ベスト <span class='big'>" + best.attack + " てん</span>");
+        nextBtn.textContent = "もういちど あそぶ";
+        fanfare();
+        burstConfetti(130);
+        overlay.classList.add("show");
+      }
+
+      /* ============ 場面切り替え・リセット ============ */
+      function loadScene(idx) {
+        sceneIdx = ((idx % SCENES.length) + SCENES.length) % SCENES.length;
+        sceneEl.innerHTML = SCENES[sceneIdx].svg;
+        sceneName.textContent = SCENES[sceneIdx].name;
+        completed = false;
+        startAt = null;
+        pane.classList.remove("done");
+        setHint(false);
+        lastActiveAt = Date.now();
+        paintFog();
+        wipedPct = 0; pctNum.textContent = "0";
+        sampleDirty = true;
+      }
+      function nextScene() {
+        var n = sceneIdx;
+        while (n === sceneIdx) n = Math.floor(Math.random() * SCENES.length);
+        loadScene(n);
+      }
+      nextBtn.addEventListener("click", function () {
+        overlay.classList.remove("show");
+        if (mode === "attack") { loadScene(sceneIdx); }
+        else nextScene();
+      });
+      resetBtn.addEventListener("click", function () {
+        if (mode === "attack") stopAttackTimer();
+        loadScene(sceneIdx);
+      });
+      function setMode(m) {
+        if (mode === m) return;
+        mode = m;
+        modeFreeBtn.classList.toggle("mode-on", m === "free");
+        modeAttackBtn.classList.toggle("mode-on", m === "attack");
+        stopAttackTimer();
+        overlay.classList.remove("show");
+        loadScene(sceneIdx);
+      }
+      modeFreeBtn.addEventListener("click", function () { setMode("free"); });
+      modeAttackBtn.addEventListener("click", function () { setMode("attack"); });
+
+      /* ============ 紙吹雪 ============ */
+      var confettiPieces = [], confettiRaf = null;
+      function burstConfetti(n) {
+        confettiCv.width = window.innerWidth; confettiCv.height = window.innerHeight;
+        confettiCv.style.display = "block";
+        var colors = ["#ff6b6b", "#ffa94d", "#ffd94d", "#69db7c", "#4dabf7", "#ff9ec7"];
+        for (var i = 0; i < n; i++) {
+          confettiPieces.push({
+            x: Math.random() * confettiCv.width,
+            y: -20 - Math.random() * confettiCv.height * 0.3,
+            w: 6 + Math.random() * 7, h: 8 + Math.random() * 8,
+            vy: 2 + Math.random() * 3.2, vx: -1.4 + Math.random() * 2.8,
+            rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24,
+            color: colors[i % colors.length]
+          });
+        }
+        if (!confettiRaf) confettiTick();
+      }
+      function confettiTick() {
+        cctx.clearRect(0, 0, confettiCv.width, confettiCv.height);
+        confettiPieces = confettiPieces.filter(function (p) { return p.y < confettiCv.height + 30; });
+        confettiPieces.forEach(function (p) {
+          p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+          cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+          cctx.fillStyle = p.color; cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cctx.restore();
+        });
+        if (confettiPieces.length) { confettiRaf = requestAnimationFrame(confettiTick); }
+        else { confettiRaf = null; confettiCv.style.display = "none"; }
+      }
+
+      /* ============ 初期化 ============ */
+      var resizeT = null;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeT);
+        resizeT = setTimeout(function () { stopAttackTimer(); sizeCanvases(); completed = false; startAt = null; pane.classList.remove("done"); }, 220);
+      });
+      sceneEl.innerHTML = SCENES[sceneIdx].svg;
+      sceneName.textContent = SCENES[sceneIdx].name;
+      sizeCanvases();
+    })();
+    </script>
+  </body>
+</html>
