@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>おえかき スタンプ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #e9f2f7;
+        --panel: #ffffff;
+        --paper: #fffdf6;
+        --paper-line: #dcebf2;
+        --ink: #33302b;
+        --ink-soft: #6f6a60;
+        --accent: #ff6b5e;
+        --accent-dark: #e04a3e;
+        --green: #3d9d4e;
+        --blue: #2f9be8;
+        --gold: #f6a609;
+        --shadow: 0 3px 0 rgba(51, 48, 43, 0.14);
+        --sel-ring: #ff6b5e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #141e27;
+          --panel: #22303d;
+          --paper: #26333f;
+          --paper-line: #35485a;
+          --ink: #f2ede4;
+          --ink-soft: #b7c0c9;
+          --accent: #ff7d70;
+          --accent-dark: #ff6b5e;
+          --shadow: 0 3px 0 rgba(0, 0, 0, 0.4);
+          --sel-ring: #ff7d70;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        -webkit-tap-highlight-color: transparent;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        color: inherit;
+      }
+
+      .app {
+        max-width: 760px;
+        margin: 0 auto;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        padding: 10px 12px 14px;
+        gap: 10px;
+      }
+
+      /* ---- 上部エリア（固定高さ：キャンバスの位置が動かない） ---- */
+      .topzone {
+        height: 178px;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .count-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        height: 58px;
+      }
+      .count {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+        background: var(--panel);
+        border-radius: 999px;
+        padding: 4px 20px 6px 22px;
+        box-shadow: var(--shadow);
+        min-width: 128px;
+        justify-content: center;
+      }
+      .count .num {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1;
+        display: inline-block;
+      }
+      .count .num.pop { animation: countpop 0.28s ease; }
+      @keyframes countpop {
+        0% { transform: scale(1); }
+        40% { transform: scale(1.45) rotate(-4deg); }
+        100% { transform: scale(1); }
+      }
+      .count .unit { font-size: 20px; font-weight: 700; }
+      .mode-switch {
+        display: flex;
+        gap: 8px;
+      }
+      .mode-btn {
+        min-height: 48px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        font-size: 18px;
+        font-weight: 800;
+        background: var(--panel);
+        color: var(--ink-soft);
+        box-shadow: var(--shadow);
+      }
+      .mode-btn.active {
+        background: var(--blue);
+        color: #fff;
+      }
+      .odai-card {
+        flex: 1;
+        background: var(--panel);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 10px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        overflow: hidden;
+      }
+      .odai-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .odai-name {
+        font-size: 27px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .best-line {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink-soft);
+        white-space: nowrap;
+      }
+      .reqs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        align-items: center;
+        min-height: 44px;
+      }
+      .req {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .req .req-icon { width: 40px; height: 40px; flex: 0 0 auto; }
+      .req .req-icon svg { width: 100%; height: 100%; display: block; }
+      .req .req-num { font-size: 27px; font-weight: 800; line-height: 1; }
+      .dots { display: flex; gap: 5px; }
+      .dot {
+        width: 17px; height: 17px;
+        border-radius: 50%;
+        border: 3px solid var(--ink-soft);
+        opacity: 0.45;
+        background: transparent;
+      }
+      .dot.filled {
+        background: var(--green);
+        border-color: var(--green);
+        opacity: 1;
+      }
+      .req .check {
+        width: 30px; height: 30px;
+        border-radius: 50%;
+        background: var(--green);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+      .req.done .check { display: flex; animation: countpop 0.3s ease; }
+      .req .check svg { width: 18px; height: 18px; }
+      .free-note { font-size: 19px; font-weight: 700; color: var(--ink-soft); }
+
+      /* ---- キャンバス ---- */
+      .canvas-wrap {
+        flex: 1 1 auto;
+        min-height: 280px;
+        display: flex;
+      }
+      #canvas {
+        position: relative;
+        flex: 1;
+        background:
+          radial-gradient(circle, var(--paper-line) 1.6px, transparent 1.7px) 0 0 / 26px 26px,
+          var(--paper);
+        border-radius: 20px;
+        box-shadow: var(--shadow), inset 0 0 0 3px var(--paper-line);
+        overflow: hidden;
+        touch-action: none;
+        cursor: pointer;
+      }
+      .stamp {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .stamp svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 2px rgba(51,48,43,0.18)); }
+      .stamp.new { animation: stampin 0.32s cubic-bezier(0.34, 1.56, 0.64, 1); }
+      @keyframes stampin {
+        0% { scale: 1.7; opacity: 0.4; }
+        55% { scale: 0.88; opacity: 1; }
+        100% { scale: 1; opacity: 1; }
+      }
+      .canvas-empty {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink-soft);
+        opacity: 0.65;
+        pointer-events: none;
+        text-align: center;
+        padding: 0 20px;
+      }
+
+      /* ---- パレット ---- */
+      .palette {
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+      }
+      .pal-btn {
+        background: var(--panel);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 7px;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        outline: 4px solid transparent;
+        outline-offset: -4px;
+        transition: transform 0.08s ease;
+      }
+      .pal-btn svg { width: 100%; max-width: 52px; height: auto; display: block; pointer-events: none; }
+      .pal-btn.selected {
+        outline-color: var(--sel-ring);
+        transform: translateY(-4px);
+      }
+      .pal-btn.hint {
+        animation: hintglow 0.9s ease-in-out infinite;
+      }
+      @keyframes hintglow {
+        0%, 100% { outline-color: transparent; transform: translateY(0); }
+        50% { outline-color: var(--gold); transform: translateY(-5px); }
+      }
+
+      /* ---- 操作ボタン ---- */
+      .actions {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 8px;
+      }
+      .act-btn {
+        min-height: 54px;
+        border-radius: 999px;
+        font-size: 18px;
+        font-weight: 800;
+        padding: 10px 14px;
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: var(--shadow);
+        flex: 1;
+      }
+      .act-btn:disabled { opacity: 0.4; cursor: default; }
+      .act-btn.done-btn {
+        background: var(--panel);
+        color: var(--ink-soft);
+        flex: 1.2;
+      }
+      .act-btn.done-btn.ready {
+        background: var(--accent);
+        color: #fff;
+        animation: readypulse 1s ease-in-out infinite;
+      }
+      @keyframes readypulse {
+        0%, 100% { box-shadow: var(--shadow); }
+        50% { box-shadow: 0 4px 20px rgba(255, 107, 94, 0.6); }
+      }
+
+      /* ---- お祝いオーバーレイ ---- */
+      .party {
+        position: fixed;
+        inset: 0;
+        background: rgba(30, 26, 22, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 50;
+      }
+      .party[hidden] { display: none; }
+      .party-inner {
+        background: var(--panel);
+        border-radius: 24px;
+        padding: 20px;
+        width: 100%;
+        max-width: 560px;
+        max-height: 92dvh;
+        overflow-y: auto;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+      }
+      .party-title {
+        font-size: 40px;
+        font-weight: 800;
+        color: var(--accent-dark);
+        margin-bottom: 10px;
+      }
+      .party-stage {
+        position: relative;
+        background:
+          radial-gradient(circle, var(--paper-line) 1.6px, transparent 1.7px) 0 0 / 26px 26px,
+          var(--paper);
+        border-radius: 16px;
+        box-shadow: inset 0 0 0 3px var(--paper-line);
+        overflow: hidden;
+        margin: 0 auto 12px;
+        width: 100%;
+      }
+      .party-stars {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin: 4px 0 6px;
+        min-height: 10px;
+      }
+      .party-stars .star { width: 52px; height: 52px; }
+      .party-stars .star svg { width: 100%; height: 100%; display: block; }
+      .party-stars .star.on { animation: countpop 0.4s ease; }
+      .party-info {
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.7;
+        margin-bottom: 14px;
+      }
+      .party-info .newrecord { color: var(--accent-dark); font-size: 22px; }
+      .party-btns {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .party-btns button {
+        flex: 1;
+        min-height: 54px;
+        min-width: 130px;
+        border-radius: 999px;
+        font-size: 18px;
+        font-weight: 800;
+        background: var(--bg);
+        color: var(--ink);
+        box-shadow: var(--shadow);
+        padding: 10px 12px;
+      }
+      .party-btns button.primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .confetti-piece {
+        position: absolute;
+        top: -4%;
+        border-radius: 3px;
+        z-index: 1;
+        animation-name: confetti-fall;
+        animation-timing-function: linear;
+        animation-fill-mode: forwards;
+      }
+      @keyframes confetti-fall {
+        to { transform: translateY(112vh) rotate(680deg); }
+      }
+
+      /* ---- 保護者向け ---- */
+      .parents {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 28px 20px 44px;
+        color: var(--ink);
+        line-height: 1.85;
+        font-size: 15px;
+      }
+      .parents h2 {
+        font-size: 20px;
+        margin: 0 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--paper-line);
+      }
+      .parents h3 { font-size: 16px; margin: 20px 0 6px; }
+      .parents p { margin: 0 0 10px; }
+      .parents ul { margin: 0 0 10px; padding-left: 1.3em; }
+
+      @media (max-width: 560px) {
+        .topzone { height: 222px; }
+        .palette { grid-template-columns: repeat(4, 1fr); }
+        .pal-btn { min-height: 60px; }
+        .odai-name { font-size: 23px; }
+        .odai-card { padding: 8px 14px; gap: 4px; }
+        .reqs { gap: 5px 12px; min-height: 36px; }
+        .req { gap: 5px; }
+        .req .req-icon { width: 32px; height: 32px; }
+        .req .req-num { font-size: 22px; }
+        .dot { width: 14px; height: 14px; border-width: 2.5px; }
+        .req .check { width: 26px; height: 26px; }
+        .count .num { font-size: 34px; }
+        .mode-btn { font-size: 16px; padding: 8px 12px; }
+        .act-btn { font-size: 16px; }
+        .party-title { font-size: 34px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .stamp.new, .count .num.pop, .req.done .check, .party-stars .star.on { animation: none; }
+        .pal-btn.hint, .act-btn.done-btn.ready { animation: none; outline-color: var(--gold); }
+        .confetti-piece { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="topzone">
+        <div class="count-row">
+          <div class="count" aria-live="polite"><span class="num" id="countNum">0</span><span class="unit">こ</span></div>
+          <div class="mode-switch">
+            <button type="button" class="mode-btn active" id="modeOdaiBtn">おだい</button>
+            <button type="button" class="mode-btn" id="modeFreeBtn">じゆうに かく</button>
+          </div>
+        </div>
+        <div class="odai-card">
+          <div class="odai-head">
+            <div class="odai-name" id="odaiName">おはなばたけ</div>
+            <div class="best-line" id="bestLine"></div>
+          </div>
+          <div class="reqs" id="reqs"></div>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div id="canvas" role="application" aria-label="おす ばしょ">
+          <div class="canvas-empty" id="canvasEmpty">ここを おして あそぼう</div>
+        </div>
+      </div>
+
+      <div class="palette" id="palette" role="group" aria-label="しゅるい"></div>
+
+      <div class="actions">
+        <button type="button" class="act-btn" id="undoBtn">ひとつ もどす</button>
+        <button type="button" class="act-btn" id="clearBtn">ぜんぶ けす</button>
+        <button type="button" class="act-btn done-btn" id="doneBtn">できた</button>
+      </div>
+    </div>
+
+    <section class="parents">
+      <h2>保護者の方へ</h2>
+      <p>「おえかき スタンプ」は、スタンプを選んでキャンバスをタップすると、その場所に絵が押せる創作あそびです。勝ち負けはなく、制限時間もありません。「おだい」モードでは、出されたお題（例：おはなばたけ）に必要なスタンプと数が絵と大きな数字、丸印で示され、そろうと「できた」ボタンで作品を大きく表示してお祝いします。「じゆうに かく」モードでは、お題なしで自由に押せます。</p>
+      <h3>創造性・自己表現</h3>
+      <p>決まった正解のないサンドボックス型の遊びは、子どもが自分で配置や組み合わせを決める経験になります。押す・消す・押し直すがすべて同じ手軽さなので、「失敗」を恐れず試行錯誤できます。完成した作品を大きく表示する演出は、作ったものを見せたい・見てもらいたいという表現の動機づけを意識したものです。</p>
+      <h3>数え上げの経験</h3>
+      <p>スタンプを押すたびに上のカウンターが1つずつ増え、お題モードでは必要な数が丸印で埋まっていきます。「あといくつ」が目で見て分かる形で、数を数える・数量を比べる初期の経験につながることを狙っています。数を声に出して一緒に数えてあげると、より楽しめます。</p>
+      <h3>罰なしの設計</h3>
+      <p>間違ったスタンプを押しても減点や失敗表示は一切ありません。「ひとつ もどす」「ぜんぶ けす」はいつでも使え、消すことも作る行為の一部として扱っています。約7秒間操作がないと、次に必要なスタンプがパレットで光ってそっと知らせます（自由モードでは光りません）。</p>
+      <h3>大人の方にも</h3>
+      <p>お題モードでは、完成までの時間と、必要以外の「余分なスタンプ」の数で星ランク（1〜3）が付きます。お題ごとの最速タイムはこのブラウザに保存され、次回開いたときも残ります（保存できない環境では、その回かぎりの記録として動作します）。素早く連続で押すとスタンプ音の音程が少しずつ上がる仕掛けもあります。</p>
+      <h3>根拠と留保</h3>
+      <p>自由な創作あそびや、具体物を1つずつ数える経験が幼児期の学びに良いとされる考え方を参考に設計していますが、このゲーム自体に学習効果を検証した研究があるわけではありません。あくまで「押す動作そのものが楽しい」遊びとして作っています。画面時間の管理は各ご家庭の方針にあわせてご利用ください。</p>
+    </section>
+
+    <div class="party" id="party" hidden>
+      <div class="party-inner">
+        <div class="party-title">できた！</div>
+        <div class="party-stage" id="partyStage"></div>
+        <div class="party-stars" id="partyStars"></div>
+        <div class="party-info" id="partyInfo"></div>
+        <div class="party-btns">
+          <button type="button" id="againBtn">おなじ おだい</button>
+          <button type="button" class="primary" id="nextBtn">つぎの おだい</button>
+          <button type="button" class="primary" id="closeBtn" hidden>つづける</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+      /* ============ スタンプの絵（SVG） ============ */
+      function raysSVG(color) {
+        var s = "";
+        for (var a = 0; a < 360; a += 45) {
+          s += '<rect x="45.5" y="1" width="9" height="17" rx="4.5" fill="' + color + '" transform="rotate(' + a + ' 50 50)"/>';
+        }
+        return s;
+      }
+      var STAMP_SVG = {
+        taiyou: '<svg viewBox="0 0 100 100">' + raysSVG("#f6a609") +
+          '<circle cx="50" cy="50" r="27" fill="#ffd23f" stroke="#f6a609" stroke-width="3"/>' +
+          '<circle cx="41" cy="46" r="3.4" fill="#7a4d00"/><circle cx="59" cy="46" r="3.4" fill="#7a4d00"/>' +
+          '<path d="M41 57 Q50 65 59 57" fill="none" stroke="#7a4d00" stroke-width="3.4" stroke-linecap="round"/></svg>',
+        ohana: '<svg viewBox="0 0 100 100">' +
+          '<path d="M50 52 V90" stroke="#3d9d4e" stroke-width="6" stroke-linecap="round"/>' +
+          '<ellipse cx="37" cy="76" rx="11" ry="5.5" fill="#4caf50" transform="rotate(-28 37 76)"/>' +
+          '<g fill="#ff7bac">' +
+          '<ellipse cx="50" cy="22" rx="10" ry="14"/>' +
+          '<ellipse cx="50" cy="22" rx="10" ry="14" transform="rotate(72 50 36)"/>' +
+          '<ellipse cx="50" cy="22" rx="10" ry="14" transform="rotate(144 50 36)"/>' +
+          '<ellipse cx="50" cy="22" rx="10" ry="14" transform="rotate(216 50 36)"/>' +
+          '<ellipse cx="50" cy="22" rx="10" ry="14" transform="rotate(288 50 36)"/></g>' +
+          '<circle cx="50" cy="36" r="10" fill="#ffd23f" stroke="#f6a609" stroke-width="2.5"/>' +
+          '<circle cx="46.5" cy="34" r="1.8" fill="#7a4d00"/><circle cx="53.5" cy="34" r="1.8" fill="#7a4d00"/>' +
+          '<path d="M46.5 39 Q50 42 53.5 39" fill="none" stroke="#7a4d00" stroke-width="2" stroke-linecap="round"/></svg>',
+        hoshi: '<svg viewBox="0 0 100 100">' +
+          '<polygon points="50,8 61,38 93,38 67,57 77,89 50,69 23,89 33,57 7,38 39,38" fill="#ffd23f" stroke="#f6a609" stroke-width="3" stroke-linejoin="round"/>' +
+          '<circle cx="43" cy="50" r="3.2" fill="#7a4d00"/><circle cx="57" cy="50" r="3.2" fill="#7a4d00"/>' +
+          '<path d="M43 59 Q50 65 57 59" fill="none" stroke="#7a4d00" stroke-width="3.2" stroke-linecap="round"/></svg>',
+        sakana: '<svg viewBox="0 0 100 100">' +
+          '<circle cx="30" cy="24" r="5" fill="#bfe8ff"/><circle cx="20" cy="13" r="3.4" fill="#bfe8ff"/>' +
+          '<path d="M70 50 L93 33 V67 Z" fill="#1e7fd9"/>' +
+          '<ellipse cx="44" cy="50" rx="30" ry="21" fill="#4db2ff" stroke="#1e7fd9" stroke-width="3"/>' +
+          '<ellipse cx="46" cy="60" rx="12" ry="7" fill="#1e7fd9" transform="rotate(-18 46 60)"/>' +
+          '<path d="M56 32 Q64 50 56 68" fill="none" stroke="#1e7fd9" stroke-width="3"/>' +
+          '<circle cx="30" cy="45" r="5.4" fill="#fff"/><circle cx="31" cy="45" r="2.8" fill="#20303c"/></svg>',
+        kuruma: '<svg viewBox="0 0 100 100">' +
+          '<path d="M27 54 L37 33 Q38 30 42 30 H60 Q64 30 66 34 L75 54 Z" fill="#ff8c42"/>' +
+          '<rect x="41" y="35" width="9" height="13" rx="2.5" fill="#bfe8ff"/><rect x="53" y="35" width="10" height="13" rx="2.5" fill="#bfe8ff"/>' +
+          '<rect x="8" y="52" width="84" height="23" rx="11" fill="#f2542d"/>' +
+          '<circle cx="28" cy="75" r="10.5" fill="#33302b"/><circle cx="28" cy="75" r="4.5" fill="#cfd8dc"/>' +
+          '<circle cx="72" cy="75" r="10.5" fill="#33302b"/><circle cx="72" cy="75" r="4.5" fill="#cfd8dc"/>' +
+          '<circle cx="87" cy="61" r="3.4" fill="#ffd23f"/></svg>',
+        ringo: '<svg viewBox="0 0 100 100">' +
+          '<path d="M50 36 C41 24 17 30 17 53 C17 77 35 92 50 86 C65 92 83 77 83 53 C83 30 59 24 50 36 Z" fill="#e63946" stroke="#b91c1c" stroke-width="3"/>' +
+          '<path d="M50 33 C50 25 54 18 61 13" fill="none" stroke="#7c4a21" stroke-width="5.5" stroke-linecap="round"/>' +
+          '<ellipse cx="66" cy="19" rx="11" ry="5.5" fill="#4caf50" transform="rotate(-22 66 19)"/>' +
+          '<ellipse cx="32" cy="50" rx="6" ry="11" fill="#ffffff" opacity="0.45" transform="rotate(-14 32 50)"/></svg>',
+        tori: '<svg viewBox="0 0 100 100">' +
+          '<path d="M26 48 L7 38 L12 58 Z" fill="#3aa7d6"/>' +
+          '<ellipse cx="47" cy="58" rx="27" ry="23" fill="#7fd1f0" stroke="#3aa7d6" stroke-width="3"/>' +
+          '<ellipse cx="50" cy="66" rx="15" ry="12" fill="#ffffff" opacity="0.65"/>' +
+          '<circle cx="67" cy="38" r="16" fill="#7fd1f0" stroke="#3aa7d6" stroke-width="3"/>' +
+          '<polygon points="81,33 95,38 81,44" fill="#f6a609"/>' +
+          '<circle cx="69" cy="36" r="3.2" fill="#20303c"/>' +
+          '<ellipse cx="42" cy="56" rx="13" ry="8" fill="#3aa7d6" transform="rotate(-18 42 56)"/>' +
+          '<path d="M42 82 V90 M56 82 V90" stroke="#f6a609" stroke-width="3.6" stroke-linecap="round"/></svg>',
+        ouchi: '<svg viewBox="0 0 100 100">' +
+          '<rect x="64" y="16" width="9" height="16" fill="#b08968"/>' +
+          '<rect x="25" y="47" width="50" height="40" fill="#ffe3b3" stroke="#d98e4a" stroke-width="3"/>' +
+          '<polygon points="12,49 50,19 88,49" fill="#e2574c" stroke="#c24338" stroke-width="3" stroke-linejoin="round"/>' +
+          '<rect x="43" y="63" width="14" height="24" rx="6" fill="#8d5a2b"/>' +
+          '<circle cx="33" cy="60" r="6.5" fill="#bfe8ff" stroke="#d98e4a" stroke-width="2.5"/>' +
+          '<circle cx="67" cy="60" r="6.5" fill="#bfe8ff" stroke="#d98e4a" stroke-width="2.5"/></svg>'
+      };
+      var STAMP_TYPES = ["taiyou", "ohana", "hoshi", "sakana", "kuruma", "ringo", "tori", "ouchi"];
+      var STAMP_NAMES = { taiyou: "たいよう", ohana: "おはな", hoshi: "ほし", sakana: "さかな", kuruma: "くるま", ringo: "りんご", tori: "とり", ouchi: "おうち" };
+      var CHECK_SVG = '<svg viewBox="0 0 24 24"><path d="M4 12.5 L10 18 L20 6" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      var STAR_ON = '<svg viewBox="0 0 100 100"><polygon points="50,6 62,37 95,37 68,57 78,90 50,70 22,90 32,57 5,37 38,37" fill="#ffd23f" stroke="#f6a609" stroke-width="3" stroke-linejoin="round"/></svg>';
+      var STAR_OFF = '<svg viewBox="0 0 100 100"><polygon points="50,6 62,37 95,37 68,57 78,90 50,70 22,90 32,57 5,37 38,37" fill="none" stroke="#b9b2a4" stroke-width="4" stroke-linejoin="round"/></svg>';
+
+      /* ============ お題 ============ */
+      var THEMES = [
+        { id: "ohanabatake", name: "おはなばたけ", reqs: { ohana: 3, taiyou: 1, tori: 1 } },
+        { id: "obentou", name: "おべんとう", reqs: { ringo: 2, sakana: 1, ohana: 1 } },
+        { id: "ouchi", name: "おうち", reqs: { ouchi: 1, tori: 2, ohana: 2 } },
+        { id: "umi", name: "うみ", reqs: { sakana: 3, taiyou: 1 } },
+        { id: "omachi", name: "おまち", reqs: { ouchi: 2, kuruma: 2, hoshi: 1 } }
+      ];
+
+      /* ============ 状態 ============ */
+      var BEST_KEY = "oekaki-stamp-best-v1";
+      var best = {};
+      try {
+        var raw = window.localStorage.getItem(BEST_KEY);
+        if (raw) { var parsed = JSON.parse(raw); if (parsed && typeof parsed === "object") best = parsed; }
+      } catch (e) { best = {}; }
+      function saveBest() {
+        try { window.localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) { /* セッション内ベストとして動作 */ }
+      }
+
+      var mode = "odai"; // "odai" | "free"
+      var themeIndex = 0;
+      var stamps = []; // {type, xp, yp, size, rot}
+      var selected = "ohana";
+      var startTime = null;
+      var finished = false;
+      var combo = 0;
+      var lastStampAt = 0;
+      var idleTimer = null;
+      var idCounter = 0;
+
+      /* ============ 音（Web Audio） ============ */
+      var actx = null;
+      function ac() {
+        if (!actx) {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          actx = new AC();
+        }
+        if (actx.state === "suspended") actx.resume();
+        return actx;
+      }
+      function tone(freqFrom, freqTo, dur, type, vol, delay) {
+        var ctx = ac(); if (!ctx) return;
+        var t0 = ctx.currentTime + (delay || 0);
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = type || "triangle";
+        osc.frequency.setValueAtTime(freqFrom, t0);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(freqTo, 1), t0 + dur);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(t0); osc.stop(t0 + dur + 0.05);
+      }
+      function stampSound() {
+        var mult = Math.pow(2, combo / 12);
+        tone(430 * mult, 170 * mult, 0.16, "triangle", 0.5, 0);
+        tone(860 * mult, 500 * mult, 0.07, "sine", 0.18, 0);
+      }
+      function checkSound() { tone(1318, 1318, 0.12, "sine", 0.3, 0); tone(1760, 1760, 0.2, "sine", 0.3, 0.09); }
+      function undoSound() { tone(240, 130, 0.11, "sine", 0.3, 0); }
+      function clearSound() { tone(520, 140, 0.28, "triangle", 0.3, 0); }
+      function fanfare() {
+        var notes = [523, 659, 784, 1047];
+        for (var i = 0; i < notes.length; i++) tone(notes[i], notes[i], 0.22, "triangle", 0.35, i * 0.1);
+        tone(1319, 1319, 0.5, "sine", 0.25, 0.42);
+        tone(1047, 1047, 0.5, "sine", 0.2, 0.42);
+      }
+
+      /* ============ DOM ============ */
+      var canvasEl = document.getElementById("canvas");
+      var canvasEmptyEl = document.getElementById("canvasEmpty");
+      var paletteEl = document.getElementById("palette");
+      var countNumEl = document.getElementById("countNum");
+      var odaiNameEl = document.getElementById("odaiName");
+      var bestLineEl = document.getElementById("bestLine");
+      var reqsEl = document.getElementById("reqs");
+      var undoBtn = document.getElementById("undoBtn");
+      var clearBtn = document.getElementById("clearBtn");
+      var doneBtn = document.getElementById("doneBtn");
+      var modeOdaiBtn = document.getElementById("modeOdaiBtn");
+      var modeFreeBtn = document.getElementById("modeFreeBtn");
+      var partyEl = document.getElementById("party");
+      var partyStageEl = document.getElementById("partyStage");
+      var partyStarsEl = document.getElementById("partyStars");
+      var partyInfoEl = document.getElementById("partyInfo");
+      var againBtn = document.getElementById("againBtn");
+      var nextBtn = document.getElementById("nextBtn");
+      var closeBtn = document.getElementById("closeBtn");
+
+      /* ============ 描画 ============ */
+      function buildPalette() {
+        paletteEl.innerHTML = "";
+        STAMP_TYPES.forEach(function (t) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "pal-btn" + (t === selected ? " selected" : "");
+          b.dataset.type = t;
+          b.setAttribute("aria-label", STAMP_NAMES[t] || t);
+          b.innerHTML = STAMP_SVG[t];
+          b.addEventListener("click", function () {
+            selected = t;
+            ac();
+            tone(660, 660, 0.06, "sine", 0.15, 0);
+            refreshPalette();
+            pokeIdle();
+          });
+          paletteEl.appendChild(b);
+        });
+      }
+      function refreshPalette() {
+        var btns = paletteEl.querySelectorAll(".pal-btn");
+        btns.forEach(function (b) {
+          b.classList.toggle("selected", b.dataset.type === selected);
+        });
+      }
+      function renderCanvas(newestId) {
+        canvasEl.querySelectorAll(".stamp").forEach(function (n) { n.remove(); });
+        stamps.forEach(function (s) {
+          var d = document.createElement("div");
+          d.className = "stamp" + (s.id === newestId ? " new" : "");
+          d.style.left = s.xp + "%";
+          d.style.top = s.yp + "%";
+          d.style.width = s.size + "%";
+          d.style.aspectRatio = "1";
+          d.style.transform = "translate(-50%,-50%) rotate(" + s.rot + "deg)";
+          d.innerHTML = STAMP_SVG[s.type];
+          canvasEl.appendChild(d);
+        });
+        canvasEmptyEl.style.display = stamps.length ? "none" : "flex";
+      }
+      function renderCount(pop) {
+        countNumEl.textContent = String(stamps.length);
+        if (pop) {
+          countNumEl.classList.remove("pop");
+          void countNumEl.offsetWidth;
+          countNumEl.classList.add("pop");
+        }
+      }
+      function countByType() {
+        var c = {};
+        stamps.forEach(function (s) { c[s.type] = (c[s.type] || 0) + 1; });
+        return c;
+      }
+      function theme() { return THEMES[themeIndex]; }
+      function reqStatus() {
+        var counts = countByType();
+        var reqs = theme().reqs;
+        var allMet = true;
+        var detail = {};
+        Object.keys(reqs).forEach(function (t) {
+          var have = Math.min(counts[t] || 0, reqs[t]);
+          detail[t] = { need: reqs[t], have: have, met: have >= reqs[t] };
+          if (have < reqs[t]) allMet = false;
+        });
+        return { allMet: allMet, detail: detail, counts: counts };
+      }
+      var prevMet = {};
+      function renderOdai() {
+        if (mode === "free") {
+          odaiNameEl.textContent = "じゆうに かく";
+          bestLineEl.textContent = "";
+          reqsEl.innerHTML = '<div class="free-note">すきな ものを じゆうに おしてね</div>';
+          doneBtn.classList.toggle("ready", stamps.length > 0);
+          doneBtn.disabled = stamps.length === 0;
+          return;
+        }
+        var th = theme();
+        odaiNameEl.textContent = th.name;
+        var b = best[th.id];
+        bestLineEl.textContent = b ? "いちばん はやい " + b + " びょう" : "";
+        var st = reqStatus();
+        reqsEl.innerHTML = "";
+        Object.keys(th.reqs).forEach(function (t) {
+          var d = st.detail[t];
+          var chip = document.createElement("div");
+          chip.className = "req" + (d.met ? " done" : "");
+          var dots = "";
+          for (var i = 0; i < d.need; i++) dots += '<span class="dot' + (i < d.have ? " filled" : "") + '"></span>';
+          chip.innerHTML = '<span class="req-icon">' + STAMP_SVG[t] + '</span><span class="req-num">×' + d.need + '</span><span class="dots">' + dots + '</span><span class="check">' + CHECK_SVG + '</span>';
+          reqsEl.appendChild(chip);
+          if (d.met && !prevMet[t] && stamps.length > 0 && !finished) checkSound();
+          prevMet[t] = d.met;
+        });
+        doneBtn.classList.toggle("ready", st.allMet);
+        doneBtn.disabled = !st.allMet;
+      }
+      function refreshButtons() {
+        undoBtn.disabled = stamps.length === 0;
+        clearBtn.disabled = stamps.length === 0;
+      }
+      function renderAll(newestId) {
+        renderCanvas(newestId);
+        renderCount(true);
+        renderOdai();
+        refreshButtons();
+      }
+
+      /* ============ ヒント（約7秒 無操作） ============ */
+      function clearHint() {
+        paletteEl.querySelectorAll(".pal-btn.hint").forEach(function (b) { b.classList.remove("hint"); });
+      }
+      function pokeIdle() {
+        clearHint();
+        if (idleTimer) clearTimeout(idleTimer);
+        if (mode !== "odai" || finished) return;
+        idleTimer = setTimeout(function () {
+          var st = reqStatus();
+          if (st.allMet) return;
+          var keys = Object.keys(theme().reqs);
+          for (var i = 0; i < keys.length; i++) {
+            if (!st.detail[keys[i]].met) {
+              var btn = paletteEl.querySelector('.pal-btn[data-type="' + keys[i] + '"]');
+              if (btn) btn.classList.add("hint");
+              break;
+            }
+          }
+        }, 7000);
+      }
+
+      /* ============ 操作 ============ */
+      function placeStamp(clientX, clientY) {
+        if (stamps.length >= 120) return;
+        var rect = canvasEl.getBoundingClientRect();
+        var xp = ((clientX - rect.left) / rect.width) * 100;
+        var yp = ((clientY - rect.top) / rect.height) * 100;
+        var size = 13 + Math.random() * 5; // キャンバス幅に対する %
+        var halfW = size / 2;
+        var halfH = (size * rect.width / rect.height) / 2;
+        xp = Math.max(halfW, Math.min(100 - halfW, xp));
+        yp = Math.max(halfH, Math.min(100 - halfH, yp));
+        var now = performance.now();
+        combo = (now - lastStampAt < 800) ? Math.min(combo + 1, 12) : 0;
+        lastStampAt = now;
+        if (startTime === null) startTime = now;
+        var s = {
+          id: ++idCounter,
+          type: selected,
+          xp: Math.round(xp * 10) / 10,
+          yp: Math.round(yp * 10) / 10,
+          size: Math.round(size * 10) / 10,
+          rot: Math.round((Math.random() * 24 - 12) * 10) / 10
+        };
+        stamps.push(s);
+        stampSound();
+        renderAll(s.id);
+        pokeIdle();
+      }
+      canvasEl.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        ac();
+        placeStamp(e.clientX, e.clientY);
+      });
+
+      undoBtn.addEventListener("click", function () {
+        if (!stamps.length) return;
+        stamps.pop();
+        combo = 0;
+        undoSound();
+        renderAll(null);
+        pokeIdle();
+      });
+      clearBtn.addEventListener("click", function () {
+        if (!stamps.length) return;
+        stamps = [];
+        combo = 0;
+        clearSound();
+        renderAll(null);
+        pokeIdle();
+      });
+
+      function startTheme(idx) {
+        themeIndex = ((idx % THEMES.length) + THEMES.length) % THEMES.length;
+        stamps = [];
+        combo = 0;
+        finished = false;
+        startTime = null;
+        prevMet = {};
+        var firstReq = Object.keys(theme().reqs)[0];
+        if (firstReq) selected = firstReq;
+        refreshPalette();
+        renderAll(null);
+        pokeIdle();
+      }
+      function setMode(m) {
+        mode = m;
+        modeOdaiBtn.classList.toggle("active", m === "odai");
+        modeFreeBtn.classList.toggle("active", m === "free");
+        if (m === "odai") {
+          startTheme(themeIndex);
+        } else {
+          stamps = [];
+          combo = 0;
+          finished = false;
+          startTime = null;
+          prevMet = {};
+          renderAll(null);
+          pokeIdle();
+        }
+      }
+      modeOdaiBtn.addEventListener("click", function () { ac(); setMode("odai"); });
+      modeFreeBtn.addEventListener("click", function () { ac(); setMode("free"); });
+
+      /* ============ できた！（お祝い） ============ */
+      var CONFETTI_COLORS = ["#ff6b5e", "#ffd23f", "#4db2ff", "#4caf50", "#ff7bac", "#ff8c42"];
+      function launchConfetti() {
+        partyEl.querySelectorAll(".confetti-piece").forEach(function (n) { n.remove(); });
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        for (var i = 0; i < 70; i++) {
+          var p = document.createElement("div");
+          p.className = "confetti-piece";
+          var sz = 7 + Math.random() * 8;
+          p.style.left = Math.random() * 100 + "%";
+          p.style.width = sz + "px";
+          p.style.height = sz * (0.5 + Math.random() * 0.9) + "px";
+          p.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+          p.style.animationDuration = 2.2 + Math.random() * 1.8 + "s";
+          p.style.animationDelay = Math.random() * 0.7 + "s";
+          partyEl.appendChild(p);
+        }
+      }
+      function renderStage() {
+        var rect = canvasEl.getBoundingClientRect();
+        partyStageEl.style.aspectRatio = rect.width + " / " + rect.height;
+        partyStageEl.innerHTML = "";
+        stamps.forEach(function (s) {
+          var d = document.createElement("div");
+          d.className = "stamp";
+          d.style.left = s.xp + "%";
+          d.style.top = s.yp + "%";
+          d.style.width = s.size + "%";
+          d.style.aspectRatio = "1";
+          d.style.transform = "translate(-50%,-50%) rotate(" + s.rot + "deg)";
+          d.innerHTML = STAMP_SVG[s.type];
+          partyStageEl.appendChild(d);
+        });
+      }
+      function extraCount() {
+        var st = reqStatus();
+        var extra = 0;
+        Object.keys(st.counts).forEach(function (t) {
+          var need = theme().reqs[t] || 0;
+          extra += Math.max(0, st.counts[t] - need);
+        });
+        return extra;
+      }
+      function starHTML(n) {
+        var s = "";
+        for (var i = 1; i <= 3; i++) s += '<span class="star' + (i <= n ? " on" : "") + '">' + (i <= n ? STAR_ON : STAR_OFF) + "</span>";
+        return s;
+      }
+      doneBtn.addEventListener("click", function () {
+        if (mode === "odai") {
+          var st = reqStatus();
+          if (!st.allMet) return;
+          finished = true;
+          clearHint();
+          var elapsed = startTime ? Math.max(1, Math.round((performance.now() - startTime) / 1000)) : 1;
+          var extra = extraCount();
+          var totalNeed = 0;
+          Object.keys(theme().reqs).forEach(function (t) { totalNeed += theme().reqs[t]; });
+          var fastLimit = 20 + totalNeed * 6;
+          var stars = 1;
+          if (extra === 0 && elapsed <= fastLimit) stars = 3;
+          else if (extra <= 2 && elapsed <= fastLimit * 2) stars = 2;
+          var th = theme();
+          var isRecord = !best[th.id] || elapsed < best[th.id];
+          if (isRecord) { best[th.id] = elapsed; saveBest(); }
+          renderStage();
+          partyStarsEl.innerHTML = starHTML(stars);
+          partyInfoEl.innerHTML =
+            elapsed + " びょうで できた！" + "<br>" +
+            "よぶんは " + extra + " こ" + "<br>" +
+            (isRecord ? '<span class="newrecord">しんきろく！</span>' : "いちばん はやい " + best[th.id] + " びょう");
+          againBtn.hidden = false;
+          nextBtn.hidden = false;
+          closeBtn.hidden = true;
+        } else {
+          if (!stamps.length) return;
+          renderStage();
+          partyStarsEl.innerHTML = "";
+          partyInfoEl.innerHTML = stamps.length + " こ おしたね！";
+          againBtn.hidden = true;
+          nextBtn.hidden = true;
+          closeBtn.hidden = false;
+        }
+        partyEl.hidden = false;
+        fanfare();
+        launchConfetti();
+        renderOdai();
+      });
+      againBtn.addEventListener("click", function () {
+        partyEl.hidden = true;
+        startTheme(themeIndex);
+      });
+      nextBtn.addEventListener("click", function () {
+        partyEl.hidden = true;
+        startTheme(themeIndex + 1);
+      });
+      closeBtn.addEventListener("click", function () {
+        partyEl.hidden = true;
+      });
+
+      /* ============ 初期化 ============ */
+      buildPalette();
+      startTheme(0);
+    </script>
+  </body>
+</html>
