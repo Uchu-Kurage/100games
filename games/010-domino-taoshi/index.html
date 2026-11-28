@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>ドミノ たおし</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2rem; }
+      * { box-sizing: border-box; }
+      :root {
+        --bg: #fbf3e6;
+        --panel: #ffffff;
+        --ink: #3a2c22;
+        --ink-soft: #7a6352;
+        --accent: #e8623c;
+        --accent-ink: #ffffff;
+        --board: #f3dcb6;
+        --board-edge: #c99a62;
+        --board-dot: rgba(120, 80, 40, .14);
+        --gold: #f5a623;
+        --good: #2e9e5b;
+        --shadow: 0 6px 24px rgba(58, 44, 34, .14);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1712;
+          --panel: #2b231c;
+          --ink: #f6ece0;
+          --ink-soft: #c7b29d;
+          --accent: #ff7d55;
+          --board: #4a3a2a;
+          --board-edge: #2f2418;
+          --board-dot: rgba(255, 230, 200, .10);
+          --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+        }
+      }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .wrap { max-width: 760px; margin: 0 auto; padding: 10px 12px 40px; }
+
+      /* ===== 上部エリア（固定高さ：盤の位置が動かない） ===== */
+      .top {
+        height: 130px;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 8px 6px 4px; overflow: hidden;
+      }
+      .count-box { min-width: 150px; }
+      .count-label { font-size: 15px; color: var(--ink-soft); font-weight: 700; letter-spacing: .05em; }
+      .count { font-size: 62px; font-weight: 800; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; display: inline-block; transform-origin: left bottom; }
+      .count-of { margin-left: 6px; font-size: 22px; font-weight: 800; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+      .info { text-align: right; }
+      .stage-name { font-size: 26px; font-weight: 800; line-height: 1.15; }
+      .bells { margin-top: 6px; min-height: 34px; display: flex; gap: 4px; justify-content: flex-end; align-items: center; }
+      .bells svg { width: 30px; height: 30px; }
+      .bells .off { opacity: .28; filter: grayscale(1); }
+      .sub-line { font-size: 17px; color: var(--ink-soft); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+      /* ===== 盤 ===== */
+      .board-frame {
+        background: linear-gradient(160deg, #c99a62, #9c7040);
+        border-radius: 18px; padding: 10px; box-shadow: var(--shadow);
+      }
+      canvas#board { width: 100%; display: block; border-radius: 10px; touch-action: none; cursor: crosshair; aspect-ratio: 800 / 560; }
+
+      /* ===== 操作ボタン ===== */
+      .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 14px; }
+      .btn {
+        font-family: inherit; font-weight: 800; font-size: 19px;
+        border: none; border-radius: 999px; padding: 12px 22px; min-height: 52px;
+        background: var(--panel); color: var(--ink); box-shadow: var(--shadow); cursor: pointer;
+      }
+      .btn:active { transform: scale(.96); }
+      .btn.primary { background: var(--accent); color: var(--accent-ink); font-size: 22px; padding: 12px 30px; }
+      .btn.mode-on { background: var(--ink); color: var(--bg); }
+      .btn:disabled { opacity: .4; cursor: default; }
+      .btn.pulse { animation: pulse 1s ease-in-out infinite; }
+      @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+      .row2 { margin-top: 10px; }
+      .stage-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+      .pip {
+        font-family: inherit; font-weight: 800; border: none; cursor: pointer;
+        width: 58px; height: 58px; border-radius: 16px; background: var(--panel); color: var(--ink);
+        box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+      }
+      .pip .n { font-size: 21px; line-height: 1; }
+      .pip .s { font-size: 11px; color: var(--gold); letter-spacing: .02em; line-height: 1; }
+      .pip .s .off { color: var(--ink-soft); opacity: .35; }
+      .pip.cur { outline: 4px solid var(--accent); }
+
+      /* ===== 結果パネル ===== */
+      .overlay {
+        position: fixed; inset: 0; z-index: 60; display: none;
+        align-items: center; justify-content: center; padding: 18px;
+        background: rgba(40, 28, 18, .45);
+      }
+      .overlay.show { display: flex; }
+      .card {
+        background: var(--panel); color: var(--ink); border-radius: 22px; box-shadow: var(--shadow);
+        padding: 24px 24px; text-align: center; max-width: 420px; width: 100%;
+        max-height: calc(100vh - 36px); overflow: auto;
+      }
+      .card .cheer { font-size: 34px; font-weight: 800; }
+      .stars { font-size: 46px; color: var(--gold); letter-spacing: .08em; margin: 6px 0 2px; min-height: 56px; }
+      .stars .off { color: var(--ink-soft); opacity: .35; }
+      .card .detail { font-size: 18px; font-weight: 700; color: var(--ink-soft); line-height: 1.7; font-variant-numeric: tabular-nums; }
+      .card .detail .big { color: var(--ink); font-size: 23px; }
+      .card .btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+
+      #confetti { position: fixed; inset: 0; z-index: 55; pointer-events: none; display: none; }
+
+      /* ===== 保護者向け ===== */
+      .for-parents {
+        margin-top: 44px; background: var(--panel); border-radius: 16px; box-shadow: var(--shadow);
+        padding: 22px 22px 10px; font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      .for-parents h2 { font-size: 19px; margin: 0 0 10px; }
+      .for-parents p, .for-parents li { font-size: 14.5px; line-height: 1.85; color: var(--ink); }
+      .for-parents ul { padding-left: 20px; margin: 6px 0 12px; }
+      .for-parents .note { color: var(--ink-soft); font-size: 13.5px; }
+
+      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+      @media (max-width: 480px) {
+        .top { height: 116px; }
+        .count { font-size: 50px; }
+        .count-of { font-size: 18px; }
+        .stage-name { font-size: 20px; }
+        .bells svg { width: 24px; height: 24px; }
+        .btn { font-size: 16px; padding: 10px 15px; min-height: 48px; }
+        .btn.primary { font-size: 19px; padding: 10px 22px; }
+        .pip { width: 48px; height: 52px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <!-- 上部：固定高さ -->
+      <div class="top">
+        <div class="count-box">
+          <div class="count-label" id="countLabel">たおれた</div>
+          <div><span class="count" id="countNum">0</span> <span class="count-of" id="countOf">/ 0 まい</span></div>
+        </div>
+        <div class="info">
+          <div class="stage-name" id="stageName">ステージ 1</div>
+          <div class="bells" id="bellRow"></div>
+        </div>
+      </div>
+
+      <!-- 盤 -->
+      <div class="board-frame">
+        <canvas id="board" aria-label="ドミノを ならべる ばん。ゆびで なぞると ドミノが ならぶ"></canvas>
+      </div>
+
+      <!-- 操作 -->
+      <div class="controls">
+        <button class="btn primary" id="pushBtn" type="button">たおす！</button>
+        <button class="btn" id="restandBtn" type="button">たてなおす</button>
+        <button class="btn" id="undoBtn" type="button">ひとつ もどす</button>
+        <button class="btn" id="clearBtn" type="button">ぜんぶ けす</button>
+      </div>
+      <div class="controls row2">
+        <button class="btn mode-on" id="modeStage" type="button">ステージ</button>
+        <button class="btn" id="modeFree" type="button">じゆう</button>
+      </div>
+      <div class="stage-row" id="stageRow"></div>
+
+      <!-- 保護者向け -->
+      <section class="for-parents">
+        <h2>保護者の方へ</h2>
+        <p>「ドミノ たおし」は、指でなぞってドミノを並べ、最初の1枚を押して一気に倒す遊びです。並べている間の「準備」と、倒した瞬間の「連鎖」がはっきり分かれているので、自分の工夫が大きな結果になる手ごたえを味わえます。ステージではドミノの列をベルまでつなげると、ベルが鳴ってクリアです。</p>
+        <ul>
+          <li><strong>見通しを立てる</strong>：ベルまでどう道をつなぐか、障害物をどう回り込むかを、倒す前に考える遊びになっています。</li>
+          <li><strong>原因と結果</strong>：すき間が空きすぎると連鎖が止まります。どこで止まったかが目で分かるので、直して試すことができます。</li>
+          <li><strong>微細運動</strong>：指でゆっくり線を描く動きは、手や指のコントロールの練習になります。</li>
+          <li><strong>罰なし設計</strong>：失敗しても「たてなおす」で並べたドミノがそのまま元に戻り、何度でも試せます。制限時間はありません。</li>
+        </ul>
+        <p class="note">※これらは遊びの設計意図であり、発達への効果を保証するものではありません。お子さんのペースで、無理のない範囲でお楽しみください。星は「ベルを全部鳴らす」「1回押すだけで全部鳴らす」「目安より少ない枚数で鳴らす」の3つです。ステージの記録と「じゆう」で一度に倒した最高枚数はこのブラウザ内に保存されます。保存できない環境では、その回だけの記録として動作します。</p>
+      </section>
+    </main>
+
+    <!-- 結果パネル -->
+    <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="cheerText">
+      <div class="card">
+        <div class="cheer" id="cheerText">できた！</div>
+        <div class="stars" id="starRow"></div>
+        <div class="detail" id="detailText"></div>
+        <div class="btns">
+          <button class="btn" id="againBtn" type="button">もういちど</button>
+          <button class="btn primary" id="nextBtn" type="button">つぎへ</button>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="confetti"></canvas>
+    <div class="visually-hidden" id="live" aria-live="polite"></div>
+
+    <script>
+    (function () {
+      "use strict";
+
+      /* ============ 定数 ============ */
+      var BW = 800, BH = 560;          // 盤のゲーム内座標
+      var K = 0.85;                    // 高さ(z) → 画面上方向の係数
+      var DT_ = 7;                     // ドミノの厚み
+      var DA = 11;                     // ドミノの横幅の半分
+      var DH = 34;                     // ドミノの高さ
+      var SP = 21;                     // 並べる間隔
+      var BR = 17;                     // ベルの半径
+      var MAX_DOM = 360;
+      var MARGIN = 16;
+      var BEST_KEY = "domino-best-v1";
+
+      // ステージ：start は「ここから」の目印（任意）、par は星3つの目安枚数
+      var STAGES = [
+        { name: "まっすぐ", start: [170, 300], bells: [[640, 300]], obs: [] },
+        { name: "ジグザグ", start: [130, 430], bells: [[400, 160], [670, 420]], obs: [] },
+        { name: "まわりみち", start: [140, 290], bells: [[670, 290]], obs: [[350, 110, 110, 340]], detour: 1.45 },
+        { name: "えだわかれ", start: [140, 290], bells: [[660, 110], [690, 290], [660, 470]], obs: [], tree: true },
+        { name: "ぐるっと", start: [400, 490], bells: [[150, 170], [400, 90], [650, 170]], obs: [[290, 230, 220, 140]], detour: 1.2 },
+        { name: "おおきな しかけ", start: [90, 500], bells: [[110, 90], [400, 300], [700, 90], [710, 490], [400, 70]], obs: [[210, 150, 90, 250], [510, 190, 90, 290]], detour: 1.15 }
+      ];
+      STAGES.forEach(function (st) {
+        // 目安枚数：スタートから近いベルを順にたどった距離（えだわかれは各ベルへの最短）
+        var len = 0, cur = st.start, rest = st.bells.slice();
+        if (st.tree) {
+          var hub = [cur[0] + (st.bells[1][0] - cur[0]) * 0.55, cur[1]];
+          len = dist(cur, hub);
+          st.bells.forEach(function (b) { len += Math.max(0, dist(hub, b) - BR - 20); });
+        } else {
+          while (rest.length) {
+            rest.sort(function (a, b) { return dist(cur, a) - dist(cur, b); });
+            var nx = rest.shift();
+            len += Math.max(0, dist(cur, nx) - BR - 20);
+            cur = nx;
+          }
+        }
+        st.par = Math.ceil(len * (st.detour || 1.12) / SP) + 3;
+      });
+      function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+      /* ============ 要素 ============ */
+      var cv = document.getElementById("board");
+      var ctx = cv.getContext("2d");
+      var countNum = document.getElementById("countNum");
+      var countOf = document.getElementById("countOf");
+      var countLabel = document.getElementById("countLabel");
+      var stageName = document.getElementById("stageName");
+      var bellRow = document.getElementById("bellRow");
+      var pushBtn = document.getElementById("pushBtn");
+      var restandBtn = document.getElementById("restandBtn");
+      var undoBtn = document.getElementById("undoBtn");
+      var clearBtn = document.getElementById("clearBtn");
+      var modeStageBtn = document.getElementById("modeStage");
+      var modeFreeBtn = document.getElementById("modeFree");
+      var stageRow = document.getElementById("stageRow");
+      var overlay = document.getElementById("overlay");
+      var cheerText = document.getElementById("cheerText");
+      var starRow = document.getElementById("starRow");
+      var detailText = document.getElementById("detailText");
+      var againBtn = document.getElementById("againBtn");
+      var nextBtn = document.getElementById("nextBtn");
+      var confettiCv = document.getElementById("confetti");
+      var cctx = confettiCv.getContext("2d");
+      var live = document.getElementById("live");
+      var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      var css = getComputedStyle(document.documentElement);
+      function color(n) { return css.getPropertyValue(n).trim(); }
+      var darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      if (darkQuery.addEventListener) darkQuery.addEventListener("change", function () { css = getComputedStyle(document.documentElement); });
+
+      /* ============ 状態 ============ */
+      var best = loadBest();
+      var mode = "stage";              // "stage" | "free"
+      var stageIdx = 0;
+      var dominoes = [];
+      var bells = [];
+      var obstacles = [];
+      var strokeSeq = 0;
+      var chain = { active: false, fallen: 0, idx: 0, quietFor: 0, pushes: 0 };
+      var freeze = 0, trauma = 0;
+      var particles = [];
+      var toast = null;                // { text, sub, t }
+      var lastActiveAt = performance.now();
+      var resultShown = false;
+      var tNow = 0;
+
+      function loadBest() {
+        try {
+          var raw = window.localStorage.getItem(BEST_KEY);
+          if (raw) { var o = JSON.parse(raw); return { stages: o.stages || {}, free: o.free || 0 }; }
+        } catch (e) { /* 保存できない環境ではセッション内ベスト */ }
+        return { stages: {}, free: 0 };
+      }
+      function saveBest() {
+        try { window.localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) { /* その回のみ保持 */ }
+      }
+
+      /* ============ 音（Web Audio） ============ */
+      var actx = null, lastKnock = 0, lastPlace = 0;
+      function ensureAudio() {
+        if (!actx) {
+          try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+        }
+        if (actx && actx.state === "suspended") actx.resume();
+      }
+      function tone(type, f, t, vol, dur, f2) {
+        var o = actx.createOscillator(), g = actx.createGain();
+        o.type = type; o.frequency.setValueAtTime(f, t);
+        if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+      }
+      function jitter(f, amt) { return f * (1 + (Math.random() * 2 - 1) * amt); }
+      // 並べる音「コトッ」：ストロークの中で少しずつ上がる
+      function placeSound(n) {
+        if (!actx) return;
+        var t = actx.currentTime;
+        if (t - lastPlace < 0.035) return;
+        lastPlace = t;
+        tone("sine", jitter(520 + Math.min(n, 24) * 14, 0.04), t, 0.12, 0.06, 300);
+      }
+      // 倒れる音「カチ」：ペンタトニックで上り下りして連鎖がメロディになる
+      var PENTA = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51, 1567.98, 1760];
+      function knockSound(i) {
+        if (!actx) return;
+        var t = actx.currentTime;
+        if (t - lastKnock < 0.03) return;
+        lastKnock = t;
+        var k = i % 18, n = k < 10 ? k : 18 - k;
+        tone("triangle", PENTA[n], t, 0.14, 0.13);
+        tone("sine", jitter(170, 0.06), t, 0.13, 0.05, 90);
+      }
+      function thudSound() {
+        if (!actx) return;
+        var t = actx.currentTime;
+        tone("sine", jitter(140, 0.05), t, 0.12, 0.09, 70);
+      }
+      function bellSound() {
+        if (!actx) return;
+        var t = actx.currentTime;
+        tone("sine", 1568, t, 0.22, 1.4);
+        tone("sine", 2349, t, 0.1, 0.9);
+        tone("triangle", 3136, t, 0.05, 0.5);
+      }
+      function fanfare() {
+        if (!actx) return;
+        var notes = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+        var t0 = actx.currentTime;
+        notes.forEach(function (f, i) { tone("triangle", f, t0 + i * 0.1, 0.24, 0.45); });
+        tone("triangle", 1046.5, t0 + 0.55, 0.2, 0.9);
+        tone("triangle", 1567.98, t0 + 0.55, 0.14, 0.9);
+      }
+      function restandSound(i) {
+        if (!actx) return;
+        var t = actx.currentTime;
+        if (t - lastPlace < 0.04) return;
+        lastPlace = t;
+        tone("sine", 300 + Math.min(i, 40) * 18, t, 0.07, 0.05);
+      }
+
+      /* ============ 盤のサイズ ============ */
+      var scale = 1;
+      function resize() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var w = cv.clientWidth || BW;
+        scale = (w * dpr) / BW;
+        var pw = Math.round(BW * scale), ph = Math.round(BH * scale);
+        if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+      }
+      if ("ResizeObserver" in window) new ResizeObserver(resize).observe(cv);
+      else window.addEventListener("resize", resize);
+
+      function toBoard(e) {
+        var r = cv.getBoundingClientRect();
+        return { x: (e.clientX - r.left) / r.width * BW, y: (e.clientY - r.top) / r.height * BH };
+      }
+
+      /* ============ ステージ ============ */
+      function loadStage(i) {
+        stageIdx = i;
+        dominoes = []; particles = []; toast = null;
+        chain.active = false; chain.pushes = 0;
+        resultShown = false;
+        obstacles = []; bells = [];
+        if (mode === "stage") {
+          var st = STAGES[i];
+          bells = st.bells.map(function (b) { return { x: b[0], y: b[1], rung: false, swing: 0, glow: 0 }; });
+          obstacles = st.obs.map(function (o, k) { return { x: o[0], y: o[1], w: o[2], h: o[3], hue: [205, 140, 330][k % 3] }; });
+        }
+        lastActiveAt = performance.now();
+        updateHud(); renderStageRow(); updateButtons();
+      }
+
+      function starsHtml(n) {
+        var s = "";
+        for (var i = 0; i < 3; i++) s += i < n ? "★" : "<span class='off'>★</span>";
+        return s;
+      }
+      function renderStageRow() {
+        stageRow.innerHTML = "";
+        stageRow.style.display = mode === "stage" ? "flex" : "none";
+        if (mode !== "stage") return;
+        STAGES.forEach(function (st, i) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "pip" + (i === stageIdx ? " cur" : "");
+          var rec = best.stages[i + 1];
+          b.innerHTML = "<span class='n'>" + (i + 1) + "</span><span class='s'>" + starsHtml(rec ? rec.stars : 0) + "</span>";
+          b.setAttribute("aria-label", "ステージ " + (i + 1) + " " + st.name + (rec ? " ほし " + rec.stars : ""));
+          b.addEventListener("click", function () { if (!chain.active) loadStage(i); });
+          stageRow.appendChild(b);
+        });
+      }
+
+      var BELL_SVG = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4c-1.4 0-2.3 1-2.3 2.2C9.6 7.4 8 11 8 15v5l-3 3.5h22L24 20v-5c0-4-1.6-7.6-5.7-8.8C18.3 5 17.4 4 16 4z" fill="#f5b52e" stroke="#b97a10" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16" cy="26.5" r="2.6" fill="#b97a10"/></svg>';
+      function updateHud() {
+        var fallen = 0;
+        for (var i = 0; i < dominoes.length; i++) if (dominoes[i].state !== "stand") fallen++;
+        if (fallen > 0 || chain.active) {
+          countLabel.textContent = "たおれた";
+          countNum.textContent = String(fallen);
+          countOf.textContent = "/ " + dominoes.length + " まい";
+        } else {
+          countLabel.textContent = "ならべた";
+          countNum.textContent = String(dominoes.length);
+          countOf.textContent = "まい";
+        }
+        if (mode === "stage") {
+          var st = STAGES[stageIdx];
+          stageName.textContent = (stageIdx + 1) + ". " + st.name;
+          bellRow.innerHTML = bells.map(function (b) { return '<span class="' + (b.rung ? "" : "off") + '">' + BELL_SVG + "</span>"; }).join("");
+          bellRow.setAttribute("aria-label", "ベル " + bells.filter(function (b) { return b.rung; }).length + " / " + bells.length);
+        } else {
+          stageName.textContent = "じゆう";
+          bellRow.innerHTML = '<span class="sub-line">いちどに たおした さいこう <b>' + best.free + "</b> まい</span>";
+        }
+      }
+      function bumpCount(big) {
+        if (reduceMotion || !countNum.animate) return;
+        countNum.animate(
+          [{ transform: "scale(" + (big ? 1.45 : 1.18) + ")", color: big ? "#f5a623" : "" }, { transform: "scale(1)" }],
+          { duration: big ? 320 : 160, easing: "ease-out" }
+        );
+      }
+      function updateButtons() {
+        var standing = dominoes.some(function (d) { return d.state === "stand"; });
+        var anyFallen = dominoes.some(function (d) { return d.state !== "stand"; });
+        pushBtn.disabled = chain.active || !standing;
+        restandBtn.disabled = chain.active || !anyFallen;
+        undoBtn.disabled = chain.active || dominoes.length === 0;
+        clearBtn.disabled = chain.active || dominoes.length === 0;
+      }
+
+      /* ============ ドミノを並べる ============ */
+      function canPlace(x, y) {
+        if (x < MARGIN || x > BW - MARGIN || y < MARGIN + 18 || y > BH - MARGIN) return false;
+        for (var i = 0; i < obstacles.length; i++) {
+          var o = obstacles[i];
+          if (x > o.x - 9 && x < o.x + o.w + 9 && y > o.y - 9 && y < o.y + o.h + 9) return false;
+        }
+        for (i = 0; i < bells.length; i++) if (Math.hypot(bells[i].x - x, bells[i].y - y) < BR + 9) return false;
+        for (i = 0; i < dominoes.length; i++) if (Math.hypot(dominoes[i].x - x, dominoes[i].y - y) < SP * 0.72) return false;
+        return true;
+      }
+      var stroke = null;
+      function place(x, y, tx, ty) {
+        if (dominoes.length >= MAX_DOM) {
+          if (!toast || toast.text !== "いっぱい！") showToast("いっぱい！", "これいじょう ならべられないよ");
+          return false;
+        }
+        if (!canPlace(x, y)) return false;
+        var n = dominoes.length;
+        dominoes.push({
+          x: x, y: y, tx: tx, ty: ty, fx: tx, fy: ty,
+          hue: (n * 9) % 360, stroke: stroke.id, state: "stand",
+          th: 0, omega: 0, rest: 1.5, cands: null, born: tNow, links: []
+        });
+        stroke.count++;
+        // 既存の列の近くから描き始めたら、その列とつなぐ（分かれ道）
+        if (stroke.count === 1 && stroke.parent && dominoes.indexOf(stroke.parent) >= 0) stroke.parent.links.push(dominoes[n]);
+        // 同じ線の中は、急カーブでも必ずつながる（すき間があいた所はつながない）
+        if (stroke.prev && Math.hypot(stroke.prev.x - x, stroke.prev.y - y) <= SP * 2.4) stroke.prev.links.push(dominoes[n]);
+        stroke.prev = dominoes[n];
+        placeSound(stroke.count);
+        return true;
+      }
+      function strokeMove(p) {
+        var s = stroke;
+        var guard = 0;
+        while (Math.hypot(p.x - s.lx, p.y - s.ly) >= SP && guard++ < 40) {
+          var dx = p.x - s.lx, dy = p.y - s.ly, l = Math.hypot(dx, dy);
+          dx /= l; dy /= l;
+          if (s.dx !== null) {   // 向きを少しなめらかに
+            var mx = s.dx * 0.35 + dx, my = s.dy * 0.35 + dy, ml = Math.hypot(mx, my);
+            mx /= ml; my /= ml;
+            if (s.first) { place(s.lx, s.ly, dx, dy); s.first = false; }
+            dx = mx; dy = my;
+          } else if (s.first) { place(s.lx, s.ly, dx, dy); s.first = false; }
+          var nx = s.lx + dx * SP, ny = s.ly + dy * SP;
+          place(nx, ny, dx, dy);
+          s.lx = nx; s.ly = ny; s.dx = dx; s.dy = dy;
+        }
+        updateHud(); updateButtons();
+      }
+
+      /* ============ 倒れる処理 ============ */
+      function computeCands(d) {
+        var fx = d.fx, fy = d.fy, nx = -fy, ny = fx;
+        var list = [], i, vx, vy, along, lat, thr;
+        for (i = 0; i < dominoes.length; i++) {
+          var o = dominoes[i];
+          if (o === d || o.state !== "stand") continue;
+          vx = o.x - d.x; vy = o.y - d.y;
+          along = vx * fx + vy * fy;
+          if (along <= 3 || along > DH + DT_ + 2) continue;
+          lat = Math.abs(vx * nx + vy * ny);
+          if (lat > DA + 10) continue;
+          thr = Math.asin(clamp((along - DT_) / DH, 0, 0.98));
+          list.push({ k: "d", o: o, thr: thr });
+        }
+        for (i = 0; i < bells.length; i++) {
+          var b = bells[i];
+          vx = b.x - d.x; vy = b.y - d.y;
+          along = vx * fx + vy * fy;
+          lat = Math.abs(vx * nx + vy * ny);
+          var front = along > 0 && along <= DH + BR + 8 && lat <= DA + BR + 6;
+          // 横を通りすぎても、すぐそばで倒れたら鳴る（5歳児向けにやさしく）
+          var beside = along > -6 && Math.hypot(vx, vy) <= BR + 32;
+          if (!front && !beside) continue;
+          thr = Math.asin(clamp((along - BR - DT_ / 2) / DH, 0, 0.98));
+          list.push({ k: "b", o: b, thr: front ? thr : Math.min(thr, 0.6), side: !front });
+        }
+        for (var s = DT_ / 2; s <= DH + DT_ / 2; s += 3) {
+          var px = d.x + fx * s, py = d.y + fy * s, hit = false;
+          for (i = 0; i < obstacles.length; i++) {
+            var ob = obstacles[i];
+            if (px > ob.x - 2 && px < ob.x + ob.w + 2 && py > ob.y - 2 && py < ob.y + ob.h + 2) { hit = true; break; }
+          }
+          if (hit) { list.push({ k: "w", thr: Math.asin(clamp((s - DT_ / 2) / DH, 0, 0.98)) }); break; }
+        }
+        var minThr = 1.5;
+        var stoppers = 0;
+        list.forEach(function (c) { if (!c.side) { stoppers++; if (c.thr < minThr) minThr = c.thr; } });
+        d.rest = stoppers ? Math.max(0.2, Math.min(1.5, minThr)) : 1.5;
+        d.cands = list.filter(function (c) { return c.side || c.thr <= d.rest + 0.15; });
+        d.cands.forEach(function (c) { c.done = false; });
+      }
+      function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+      function startFall(d, fx, fy, omega0) {
+        d.state = "fall";
+        d.fx = fx; d.fy = fy;
+        d.th = 0; d.omega = omega0;
+        computeCands(d);
+        chain.fallen++;
+        knockSound(chain.idx++);
+        bumpCount(chain.fallen % 10 === 0);
+        if (chain.fallen % 10 === 0) burstAt(d.x, d.y - DH * K, 8, "#ffd34d", 1.2);
+        updateHud();
+      }
+      function push(d) {
+        if (chain.active || d.state !== "stand") return;
+        overlayHide();
+        toast = null;
+        chain.active = true; chain.fallen = 0; chain.idx = 0; chain.quietFor = 0; chain.pushes++;
+        startFall(d, d.tx, d.ty, 2.2);
+        updateButtons();
+        markActive();
+      }
+      function firstStanding() {
+        for (var i = 0; i < dominoes.length; i++) if (dominoes[i].state === "stand") return dominoes[i];
+        return null;
+      }
+
+      function ringBell(b) {
+        if (b.rung) return;
+        b.rung = true; b.swing = 1; b.glow = 1;
+        bellSound();
+        freeze = Math.max(freeze, 0.09);
+        trauma = Math.min(1, trauma + 0.35);
+        burstAt(b.x, b.y - 26, reduceMotion ? 10 : 22, "#ffd34d", 2.2);
+        updateHud();
+        var left = bells.filter(function (x) { return !x.rung; }).length;
+        say(left ? "ベル なった！ あと " + left + " こ" : "ベル ぜんぶ なった！");
+      }
+
+      function stepSim(dt) {
+        var falling = 0;
+        var spd = 1 + Math.min(chain.fallen / 70, 0.6);
+        for (var i = 0; i < dominoes.length; i++) {
+          var d = dominoes[i];
+          if (d.state !== "fall") continue;
+          falling++;
+          d.omega += (24 * Math.sin(d.th) + 8) * dt * spd;
+          d.th = Math.min(d.rest, d.th + d.omega * dt);
+          for (var j = 0; j < d.cands.length; j++) {
+            var c = d.cands[j];
+            if (c.done || d.th + 1e-6 < Math.min(c.thr, d.rest)) continue;
+            c.done = true;
+            if (c.k === "d" && c.o.state === "stand") {
+              var s = (c.o.tx * d.fx + c.o.ty * d.fy) < 0 ? -1 : 1;
+              startFall(c.o, c.o.tx * s, c.o.ty * s, Math.max(3.4, d.omega * 0.6));
+            } else if (c.k === "b") {
+              ringBell(c.o);
+            }
+          }
+          if (d.links.length && d.th >= Math.min(0.35, d.rest)) {
+            for (var q = 0; q < d.links.length; q++) {
+              var L = d.links[q];
+              if (L.state !== "stand" || dominoes.indexOf(L) < 0) continue;
+              var vx = L.x - d.x, vy = L.y - d.y;
+              var dot = L.tx * vx + L.ty * vy;
+              if (Math.abs(dot) < 4) dot = L.tx * d.fx + L.ty * d.fy;
+              var sg = dot < 0 ? -1 : 1;
+              startFall(L, L.tx * sg, L.ty * sg, 3.4);
+            }
+          }
+          if (d.th >= d.rest) {
+            d.state = "rest";
+            var tipS = DT_ / 2 + DH * Math.sin(d.th);
+            var tx = d.x + d.fx * tipS, ty = d.y + d.fy * tipS - DH * Math.cos(d.th) * K;
+            if (d.rest >= 1.4) { thudSound(); burstAt(tx, ty, reduceMotion ? 2 : 5, "#b9a08a", 0.8); }
+            else if (!reduceMotion && Math.random() < 0.5) burstAt(tx, ty, 2, "#c9b7a6", 0.5);
+            updateButtons();
+          }
+        }
+        if (chain.active) {
+          if (falling === 0) {
+            chain.quietFor += dt;
+            if (chain.quietFor > 0.45) endChain();
+          } else chain.quietFor = 0;
+        }
+      }
+
+      function endChain() {
+        chain.active = false;
+        updateButtons(); updateHud();
+        markActive();
+        if (mode === "stage") {
+          var left = bells.filter(function (b) { return !b.rung; }).length;
+          if (left === 0) { stageClear(); return; }
+          var standing = dominoes.some(function (d) { return d.state === "stand"; });
+          showToast("あと ベル " + left + " こ！", standing ? "のこりの ドミノも おせるよ" : "「たてなおす」で もういちど");
+          if (!standing) restandBtn.classList.add("pulse");
+        } else {
+          var n = chain.fallen;
+          var isBest = n > best.free;
+          if (isBest) { best.free = n; saveBest(); updateHud(); }
+          if (n >= 20) {
+            fanfare(); burstConfetti(reduceMotion ? 40 : 110);
+            setTimeout(function () {
+              cheerText.textContent = n >= 100 ? "すごーい！" : "やったね！";
+              starRow.innerHTML = "";
+              detailText.innerHTML = "<span class='big'>" + n + " まい</span> たおれた！" +
+                (isBest ? "<br>いちどに たおした さいこう きろく！" : "<br>さいこう <span class='big'>" + best.free + " まい</span>");
+              againBtn.textContent = "たてなおす";
+              nextBtn.textContent = "あたらしく ならべる";
+              overlayShow();
+            }, 700);
+          } else {
+            showToast(n + " まい たおれた！", isBest ? "さいこう きろく！" : "");
+          }
+        }
+      }
+
+      function stageClear() {
+        var st = STAGES[stageIdx];
+        var used = dominoes.length;
+        var single = chain.pushes === 1;
+        var stars = 1 + (single ? 1 : 0) + (single && used <= st.par ? 1 : 0);
+        var key = stageIdx + 1;
+        var rec = best.stages[key] || { stars: 0, fewest: 0 };
+        var newFew = !rec.fewest || used < rec.fewest;
+        rec.stars = Math.max(rec.stars, stars);
+        if (newFew) rec.fewest = used;
+        best.stages[key] = rec; saveBest();
+        fanfare();
+        burstConfetti(reduceMotion ? 40 : 140);
+        trauma = Math.min(1, trauma + 0.3);
+        resultShown = true;
+        setTimeout(function () {
+          cheerText.textContent = stageIdx === STAGES.length - 1 ? "ぜんぶ クリア！" : "チーン！ できた！";
+          starRow.innerHTML = starsHtml(stars);
+          detailText.innerHTML =
+            "ドミノ <span class='big'>" + used + " まい</span>（めやす " + st.par + " まい）<br>" +
+            (single ? "1かい おしただけで ぜんぶ なった！" : chain.pushes + "かい おして ぜんぶ なった") +
+            (newFew && rec.fewest ? "<br>いちばん すくない きろく！" : "<br>いちばん すくない <span class='big'>" + rec.fewest + " まい</span>");
+          againBtn.textContent = "もういちど";
+          nextBtn.textContent = stageIdx === STAGES.length - 1 ? "じゆうに あそぶ" : "つぎの ステージ";
+          renderStageRow();
+          overlayShow();
+          say("クリア。ほし " + stars + " こ");
+        }, 900);
+      }
+
+      function restand() {
+        if (chain.active) return;
+        overlayHide();
+        restandBtn.classList.remove("pulse");
+        toast = null;
+        chain.pushes = 0;
+        var n = dominoes.length;
+        dominoes.forEach(function (d, i) {
+          d.state = "stand"; d.th = 0; d.omega = 0; d.fx = d.tx; d.fy = d.ty;
+          d.born = tNow + Math.min(i * 0.012, 0.6 * i / Math.max(1, n));
+          d.restandSnd = true;
+        });
+        bells.forEach(function (b) { b.rung = false; b.glow = 0; });
+        resultShown = false;
+        updateHud(); updateButtons();
+        markActive();
+      }
+
+      /* ============ 入力 ============ */
+      var down = null;
+      cv.addEventListener("pointerdown", function (e) {
+        e.preventDefault();
+        ensureAudio();
+        if (overlay.classList.contains("show")) return;
+        var p = toBoard(e);
+        try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+        var hitD = null, bestD = 18;
+        for (var i = 0; i < dominoes.length; i++) {
+          var d = dominoes[i];
+          if (d.state !== "stand") continue;
+          var dd = Math.hypot(d.x - p.x, d.y - DH * K * 0.5 - p.y);
+          if (dd < bestD) { bestD = dd; hitD = d; }
+        }
+        down = { x: p.x, y: p.y, hit: hitD, moved: false };
+        markActive();
+      });
+      cv.addEventListener("pointermove", function (e) {
+        if (!down) return;
+        var p = toBoard(e);
+        if (!down.moved && Math.hypot(p.x - down.x, p.y - down.y) > 8) {
+          if (chain.active) return;
+          down.moved = true;
+          overlayHide();
+          toast = null;
+          restandBtn.classList.remove("pulse");
+          stroke = { id: ++strokeSeq, lx: down.x, ly: down.y, dx: null, dy: null, first: true, count: 0, parent: nearestDomino(down.x, down.y, 34, -1) };
+        }
+        if (down.moved && stroke) { strokeMove(p); markActive(); }
+      });
+      function nearestDomino(x, y, maxD, exceptStroke) {
+        var bestD = maxD, hit = null;
+        for (var i = 0; i < dominoes.length; i++) {
+          var d = dominoes[i];
+          if (d.stroke === exceptStroke) continue;
+          var dd = Math.hypot(d.x - x, d.y - y);
+          if (dd < bestD) { bestD = dd; hit = d; }
+        }
+        return hit;
+      }
+      function endPointer(e) {
+        if (!down) return;
+        // 既存の列に向かって描き終えたら、そこにつなぐ（合流）
+        if (down.moved && stroke && stroke.count > 0) {
+          var lastD = dominoes[dominoes.length - 1];
+          var ep = toBoard(e);
+          var tgt = nearestDomino(ep.x, ep.y, 40, stroke.id);
+          if (tgt && Math.hypot(tgt.x - lastD.x, tgt.y - lastD.y) < 56) lastD.links.push(tgt);
+        }
+        if (!down.moved && down.hit) push(down.hit);
+        else if (down.moved && stroke && stroke.first) {
+          // 短いなぞり：1まいだけ置く
+          var p = toBoard(e), dx = p.x - down.x, dy = p.y - down.y, l = Math.hypot(dx, dy) || 1;
+          place(down.x, down.y, dx / l, dy / l);
+          updateHud(); updateButtons();
+        }
+        down = null; stroke = null;
+      }
+      cv.addEventListener("pointerup", endPointer);
+      cv.addEventListener("pointercancel", function () { down = null; stroke = null; });
+      function markActive() { lastActiveAt = performance.now(); pushBtn.classList.remove("pulse"); }
+
+      pushBtn.addEventListener("click", function () { ensureAudio(); var d = firstStanding(); if (d) push(d); });
+      restandBtn.addEventListener("click", function () { ensureAudio(); restand(); });
+      undoBtn.addEventListener("click", function () {
+        if (chain.active || !dominoes.length) return;
+        var last = dominoes[dominoes.length - 1].stroke;
+        dominoes = dominoes.filter(function (d) { return d.stroke !== last; });
+        if (!dominoes.some(function (d) { return d.state !== "stand"; })) bells.forEach(function (b) { b.rung = false; });
+        toast = null;
+        updateHud(); updateButtons(); markActive();
+      });
+      clearBtn.addEventListener("click", function () {
+        if (chain.active) return;
+        dominoes = []; toast = null; chain.pushes = 0;
+        restandBtn.classList.remove("pulse");
+        bells.forEach(function (b) { b.rung = false; b.glow = 0; });
+        updateHud(); updateButtons(); markActive();
+      });
+      againBtn.addEventListener("click", function () { restand(); });
+      nextBtn.addEventListener("click", function () {
+        overlayHide();
+        if (mode === "free") { loadStage(0); return; }
+        if (stageIdx === STAGES.length - 1) { setMode("free"); return; }
+        loadStage(stageIdx + 1);
+      });
+      function setMode(m) {
+        if (chain.active || mode === m) return;
+        mode = m;
+        modeStageBtn.classList.toggle("mode-on", m === "stage");
+        modeFreeBtn.classList.toggle("mode-on", m === "free");
+        overlayHide();
+        loadStage(m === "stage" ? stageIdx : 0);
+      }
+      modeStageBtn.addEventListener("click", function () { setMode("stage"); });
+      modeFreeBtn.addEventListener("click", function () { setMode("free"); });
+
+      function overlayShow() { overlay.classList.add("show"); nextBtn.focus(); }
+      function overlayHide() { overlay.classList.remove("show"); }
+      function showToast(text, sub) { toast = { text: text, sub: sub || "", t: 0 }; say(text + " " + (sub || "")); }
+      function say(t) { live.textContent = ""; setTimeout(function () { live.textContent = t; }, 50); }
+
+      /* ============ 描画：箱（ドミノ・つみき） ============ */
+      var LIGHT = norm3(-0.45, -0.35, 0.82);
+      function norm3(x, y, z) { var l = Math.hypot(x, y, z); return [x / l, y / l, z / l]; }
+      // 箱の8頂点。f=倒れる向き、θ=倒れた角度。手前下の辺を軸に回る
+      function boxVerts(px, py, fx, fy, th, T, A, H) {
+        var nx = -fy, ny = fx, c = Math.cos(th), s = Math.sin(th), v = [];
+        for (var i = 0; i < 8; i++) {
+          var sl = (i & 1) ? 0 : -T, r = (i & 2) ? A : -A, q = (i & 4) ? H : 0;
+          var al = T / 2 + sl * c + q * s;
+          var z = -sl * s + q * c;
+          v.push([px + fx * al + nx * r, py + fy * al + ny * r, z]);
+        }
+        return v;
+      }
+      var FACES = [
+        { idx: [1, 3, 7, 5], n: function (f, n, c, s) { return [f[0] * c, f[1] * c, -s]; } },
+        { idx: [0, 4, 6, 2], n: function (f, n, c, s) { return [-f[0] * c, -f[1] * c, s]; } },
+        { idx: [2, 6, 7, 3], n: function (f, n) { return [n[0], n[1], 0]; } },
+        { idx: [0, 1, 5, 4], n: function (f, n) { return [-n[0], -n[1], 0]; } },
+        { idx: [4, 5, 7, 6], n: function (f, n, c, s) { return [f[0] * s, f[1] * s, c]; }, top: true }
+      ];
+      function drawBox(v, fx, fy, th, hue, sat, lig, outline) {
+        var f = [fx, fy], n = [-fy, fx], c = Math.cos(th), s = Math.sin(th);
+        for (var k = 0; k < FACES.length; k++) {
+          var F = FACES[k], nn = F.n(f, n, c, s);
+          if (nn[1] + nn[2] * K * 1.15 <= 0.001) continue;     // 見えない面は描かない
+          var sh = 0.62 + 0.38 * Math.max(0, nn[0] * LIGHT[0] + nn[1] * LIGHT[1] + nn[2] * LIGHT[2]);
+          ctx.beginPath();
+          for (var j = 0; j < 4; j++) {
+            var p = v[F.idx[j]];
+            if (j === 0) ctx.moveTo(p[0], p[1] - p[2] * K); else ctx.lineTo(p[0], p[1] - p[2] * K);
+          }
+          ctx.closePath();
+          ctx.fillStyle = "hsl(" + hue + "," + sat + "%," + (lig * sh) + "%)";
+          ctx.fill();
+          if (outline) { ctx.strokeStyle = outline; ctx.lineWidth = 0.8; ctx.stroke(); }
+        }
+      }
+      function drawShadow(v) {
+        // 8頂点を地面へ落として凸包を塗る
+        var pts = v.map(function (p) { return [p[0] + p[2] * 0.42, p[1] + p[2] * 0.22]; });
+        pts.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+        function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+        var lower = [], upper = [], i;
+        for (i = 0; i < pts.length; i++) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pts[i]) <= 0) lower.pop(); lower.push(pts[i]); }
+        for (i = pts.length - 1; i >= 0; i--) { while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pts[i]) <= 0) upper.pop(); upper.push(pts[i]); }
+        var hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+        ctx.moveTo(hull[0][0], hull[0][1]);
+        for (i = 1; i < hull.length; i++) ctx.lineTo(hull[i][0], hull[i][1]);
+        ctx.closePath();
+      }
+
+      function easeOutBack(t) { var c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+
+      function dominoGeom(d) {
+        var a = clamp((tNow - d.born) / 0.18, 0, 1);
+        var sc = a <= 0 ? 0 : easeOutBack(a);
+        if (a > 0 && d.restandSnd) { d.restandSnd = false; restandSound(dominoes.indexOf(d)); }
+        if (sc <= 0.01) return null;
+        return boxVerts(d.x, d.y, d.fx, d.fy, d.th, DT_, DA * sc, DH * sc);
+      }
+
+      /* ============ 描画：ベル ============ */
+      function drawBell(b) {
+        var x = b.x, y = b.y;
+        var bob = b.rung ? 0 : Math.sin(tNow * 2.4 + x) * 1.2;
+        // 台
+        ctx.fillStyle = "rgba(60,40,20,.18)";
+        ctx.beginPath(); ctx.ellipse(x + 6, y + 4, BR + 4, BR * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#8a6238";
+        ctx.beginPath(); ctx.ellipse(x, y, BR + 2, BR * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#a97c50";
+        ctx.beginPath(); ctx.ellipse(x, y - 3, BR, BR * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+        // 光（鳴ったあと）
+        if (b.rung) {
+          var gl = 0.35 + 0.15 * Math.sin(tNow * 4);
+          var g = ctx.createRadialGradient(x, y - 30, 2, x, y - 30, 46);
+          g.addColorStop(0, "rgba(255,226,120," + gl + ")");
+          g.addColorStop(1, "rgba(255,226,120,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(x, y - 30, 46, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.save();
+        ctx.translate(x, y - 50 + bob);
+        ctx.rotate(Math.sin(tNow * 18) * 0.35 * b.swing);
+        ctx.beginPath();
+        ctx.moveTo(-3, 2);
+        ctx.bezierCurveTo(-14, 6, -15, 22, -16, 34);
+        ctx.lineTo(-20, 40); ctx.lineTo(20, 40); ctx.lineTo(16, 34);
+        ctx.bezierCurveTo(15, 22, 14, 6, 3, 2);
+        ctx.closePath();
+        var bg = ctx.createLinearGradient(-18, 0, 18, 0);
+        bg.addColorStop(0, b.rung ? "#ffd75e" : "#f0b43a");
+        bg.addColorStop(0.45, b.rung ? "#fff1b0" : "#ffd979");
+        bg.addColorStop(1, "#d08f17");
+        ctx.fillStyle = bg; ctx.fill();
+        ctx.strokeStyle = "#a8700c"; ctx.lineWidth = 1.6; ctx.stroke();
+        ctx.fillStyle = "#a8700c";
+        ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 43, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      /* ============ パーティクル ============ */
+      function burstAt(x, y, n, col, power) {
+        for (var i = 0; i < n; i++) {
+          var a = Math.random() * Math.PI * 2, sp = (40 + Math.random() * 90) * power;
+          particles.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40 * power, life: 0.5 + Math.random() * 0.4, t: 0, col: col, r: 2 + Math.random() * 2.5 });
+        }
+      }
+      function stepParticles(dt) {
+        for (var i = particles.length - 1; i >= 0; i--) {
+          var p = particles[i];
+          p.t += dt;
+          if (p.t >= p.life) { particles.splice(i, 1); continue; }
+          p.vy += 260 * dt; p.vx *= 0.98;
+          p.x += p.vx * dt; p.y += p.vy * dt;
+        }
+      }
+
+      /* ============ メイン描画 ============ */
+      function render(dt) {
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.clearRect(0, 0, BW, BH);
+        ctx.save();
+        if (!reduceMotion && trauma > 0) {
+          var sh = trauma * trauma * 7;
+          ctx.translate((Math.random() * 2 - 1) * sh, (Math.random() * 2 - 1) * sh);
+        }
+        // 盤
+        ctx.fillStyle = color("--board");
+        ctx.fillRect(-10, -10, BW + 20, BH + 20);
+        ctx.fillStyle = color("--board-dot");
+        for (var gy = 20; gy < BH; gy += 40) for (var gx = 20; gx < BW; gx += 40) { ctx.beginPath(); ctx.arc(gx, gy, 1.6, 0, Math.PI * 2); ctx.fill(); }
+
+        var idle = (performance.now() - lastActiveAt) / 1000;
+        // スタートの目印とヒント
+        if (mode === "stage") {
+          var st = STAGES[stageIdx];
+          var sx = st.start[0], sy = st.start[1];
+          if (dominoes.length === 0) {
+            var pulse = 0.5 + 0.5 * Math.sin(tNow * 3);
+            ctx.fillStyle = "rgba(232,98,60," + (0.14 + 0.12 * pulse) + ")";
+            ctx.beginPath(); ctx.arc(sx, sy, 22 + pulse * 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "rgba(232,98,60,.9)";
+            ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.font = "800 24px " + getComputedStyle(document.body).fontFamily;
+            ctx.textAlign = "center";
+            ctx.fillStyle = color("--ink");
+            ctx.fillText("ここから なぞろう", sx, sy + 52);
+            if (idle > 5) {   // ヒント：ベルまでの点線
+              var tgt = bells[0];
+              ctx.setLineDash([6, 10]); ctx.lineDashOffset = -tNow * 30;
+              ctx.strokeStyle = "rgba(232,98,60,.55)"; ctx.lineWidth = 4; ctx.lineCap = "round";
+              ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tgt.x, tgt.y); ctx.stroke();
+              ctx.setLineDash([]);
+            }
+          }
+        }
+
+        // 影 → 物（奥から手前へ）
+        var items = [], i, d, v;
+        for (i = 0; i < dominoes.length; i++) {
+          d = dominoes[i];
+          v = dominoGeom(d);
+          if (!v) continue;
+          items.push({ key: d.y + d.fy * DH * Math.sin(d.th) * 0.5, kind: "d", d: d, v: v });
+        }
+        obstacles.forEach(function (o) {
+          var ov = boxVerts(o.x + o.w / 2, o.y + o.h / 2, 1, 0, 0, o.w, o.h / 2, 44);
+          items.push({ key: o.y + o.h, kind: "o", o: o, v: ov });
+        });
+        bells.forEach(function (b) { items.push({ key: b.y, kind: "b", b: b }); });
+
+        ctx.fillStyle = "rgba(60,40,20,.16)";
+        ctx.beginPath();
+        items.forEach(function (it) { if (it.v) drawShadow(it.v); });
+        ctx.fill();
+
+        items.sort(function (a, b) { return a.key - b.key; });
+        var firstS = !chain.active && idle > 4 ? firstStanding() : null;
+        items.forEach(function (it) {
+          if (it.kind === "d") {
+            var dd = it.d;
+            var lig = dd.state === "stand" ? 62 : 66;
+            drawBox(it.v, dd.fx, dd.fy, dd.th, dd.hue, 72, lig, "rgba(40,25,10,.25)");
+            // ドミノの面の真ん中の線
+            if (dd.th < 0.6) {
+              var c = Math.cos(dd.th), s = Math.sin(dd.th);
+              var al = DT_ / 2 - DT_ * c + (DH / 2) * s, z = DT_ * s + (DH / 2) * c;
+              var nx = -dd.fy, ny = dd.fx;
+              var bx = dd.x + dd.fx * al, by = dd.y + dd.fy * al - z * K;
+              ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 1.4;
+              ctx.beginPath(); ctx.moveTo(bx - nx * DA * 0.7, by - ny * DA * 0.7); ctx.lineTo(bx + nx * DA * 0.7, by + ny * DA * 0.7); ctx.stroke();
+            }
+          } else if (it.kind === "o") {
+            drawBox(it.v, 1, 0, 0, it.o.hue, 38, 64, "rgba(40,25,10,.3)");
+            // 本のしま模様
+            var o = it.o;
+            ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2;
+            for (var k = 1; k < 4; k++) {
+              var yy = o.y + o.h - 44 * K * k / 4;
+              ctx.beginPath(); ctx.moveTo(o.x, yy); ctx.lineTo(o.x + o.w, yy); ctx.stroke();
+            }
+          } else {
+            drawBell(it.b);
+          }
+        });
+
+        // 「ここを おす」ヒント
+        if (firstS && dominoes.length) {
+          var pu = 0.5 + 0.5 * Math.sin(tNow * 4);
+          ctx.strokeStyle = "rgba(232,98,60," + (0.5 + 0.4 * pu) + ")"; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(firstS.x, firstS.y - DH * K * 0.5, 20 + pu * 4, 0, Math.PI * 2); ctx.stroke();
+          if (!pushBtn.classList.contains("pulse")) pushBtn.classList.add("pulse");
+        }
+
+        // パーティクル
+        particles.forEach(function (p) {
+          ctx.globalAlpha = 1 - p.t / p.life;
+          ctx.fillStyle = p.col;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        ctx.restore();
+
+        // メッセージ
+        if (toast) {
+          toast.t += dt;
+          var a = clamp(toast.t / 0.2, 0, 1) * clamp((5 - toast.t) / 0.5, 0, 1);
+          if (a <= 0) toast = null;
+          else {
+            var fam = getComputedStyle(document.body).fontFamily;
+            ctx.globalAlpha = a;
+            ctx.fillStyle = "rgba(255,255,255,.92)";
+            roundRect(BW / 2 - 260, 20, 520, toast.sub ? 104 : 70, 22); ctx.fill();
+            ctx.fillStyle = "#3a2c22"; ctx.textAlign = "center";
+            ctx.font = "800 38px " + fam;
+            ctx.fillText(toast.text, BW / 2, 68);
+            if (toast.sub) { ctx.font = "700 24px " + fam; ctx.fillStyle = "#7a6352"; ctx.fillText(toast.sub, BW / 2, 104); }
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+      function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+      }
+
+      /* ============ ループ ============ */
+      var last = performance.now();
+      function frame(now) {
+        var dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        tNow += dt;
+        trauma = Math.max(0, trauma - dt * 1.6);
+        bells.forEach(function (b) { b.swing = Math.max(0, b.swing - dt * 0.9); });
+        if (freeze > 0) freeze -= dt;
+        else {
+          // 速い連鎖でもすり抜けないよう細かく刻む
+          var steps = 3;
+          for (var i = 0; i < steps; i++) stepSim(dt / steps);
+        }
+        stepParticles(dt);
+        render(dt);
+        requestAnimationFrame(frame);
+      }
+
+      /* ============ 紙吹雪 ============ */
+      var confettiPieces = [], confettiRaf = null;
+      function burstConfetti(n) {
+        confettiCv.width = window.innerWidth; confettiCv.height = window.innerHeight;
+        confettiCv.style.display = "block";
+        var colors = ["#ff6b6b", "#ffa94d", "#ffd94d", "#69db7c", "#4dabf7", "#ff9ec7"];
+        for (var i = 0; i < n; i++) {
+          confettiPieces.push({
+            x: Math.random() * confettiCv.width, y: -20 - Math.random() * confettiCv.height * 0.3,
+            w: 6 + Math.random() * 7, h: 8 + Math.random() * 8,
+            vy: 2 + Math.random() * 3.2, vx: -1.4 + Math.random() * 2.8,
+            rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24, color: colors[i % colors.length]
+          });
+        }
+        if (!confettiRaf) confettiTick();
+      }
+      function confettiTick() {
+        cctx.clearRect(0, 0, confettiCv.width, confettiCv.height);
+        confettiPieces = confettiPieces.filter(function (p) { return p.y < confettiCv.height + 30; });
+        confettiPieces.forEach(function (p) {
+          p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+          cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+          cctx.fillStyle = p.color; cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cctx.restore();
+        });
+        if (confettiPieces.length) confettiRaf = requestAnimationFrame(confettiTick);
+        else { confettiRaf = null; confettiCv.style.display = "none"; }
+      }
+
+      /* ============ 初期化 ============ */
+      resize();
+      loadStage(0);
+      requestAnimationFrame(frame);
+    })();
+    </script>
+  </body>
+</html>
